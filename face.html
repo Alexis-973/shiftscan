@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FaceScan">
+<title>ShiftScan — Face Station</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="face-api.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a25;
+  --surface:#1e1e2e;--surface2:#252538;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --accent:#6ee7f7;--accent2:#a78bfa;--accent3:#34d399;
+  --danger:#f87171;--warn:#fbbf24;
+  --text:#f0f0ff;--text2:#9090b0;
+  --mono:'DM Mono',monospace;--display:'Syne',sans-serif;--body:'Inter',sans-serif;
+}
+html,body{background:var(--bg);min-height:100vh;font-family:var(--body);color:var(--text);overflow:hidden}
+
+/* SETUP SCREEN */
+#setup-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem;
+}
+.setup-logo{font-family:var(--display);font-size:1.6rem;font-weight:800;margin-bottom:.25rem;display:flex;align-items:center;gap:10px}
+.setup-logo-dot{width:10px;height:10px;background:var(--accent);border-radius:50%}
+.setup-sub{font-size:.85rem;color:var(--text2);margin-bottom:2rem;text-align:center}
+.setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:480px}
+.setup-title{font-family:var(--display);font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;text-align:center}
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem}
+.fg label{font-size:.75rem;color:var(--text2);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.fg select,.fg input{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.75rem 1rem;color:var(--text);font-family:var(--body);font-size:1rem;outline:none;transition:border-color .2s;width:100%}
+.fg select:focus,.fg input:focus{border-color:var(--accent)}
+.fg select option{background:var(--bg3)}
+.punch-btns{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
+.punch-btn{padding:1rem;border-radius:10px;font-family:var(--body);font-size:1rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s;letter-spacing:.03em}
+.punch-btn.sel-in{background:rgba(52,211,153,.15);color:var(--accent3);border-color:var(--accent3)}
+.punch-btn.sel-out{background:rgba(167,139,250,.15);color:var(--accent2);border-color:var(--accent2)}
+.start-btn{width:100%;padding:1rem;border-radius:10px;background:var(--accent);color:#0a0a0f;font-family:var(--display);font-size:1.1rem;font-weight:800;border:none;cursor:pointer;transition:opacity .2s;letter-spacing:.02em}
+.start-btn:hover{opacity:.9}
+.start-btn:disabled{opacity:.4;cursor:not-allowed}
+.model-status{display:flex;align-items:center;gap:8px;padding:.75rem 1rem;background:var(--bg3);border-radius:8px;margin-bottom:1.25rem;font-size:.82rem}
+.model-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex-shrink:0}
+.model-dot.ready{background:var(--accent3)}
+.model-dot.loading{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.load-btn{margin-left:auto;padding:.35rem .75rem;border-radius:6px;background:var(--accent);color:#000;font-size:.78rem;font-weight:600;border:none;cursor:pointer;white-space:nowrap}
+.load-btn:disabled{opacity:.5;cursor:not-allowed}
+.back-link{margin-top:1.5rem;font-size:.82rem;color:var(--text2);text-align:center}
+.back-link a{color:var(--accent);text-decoration:none}
+
+/* SCAN SCREEN */
+#scan-screen{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
+#scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#scan-canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* TOP BAR */
+.top-bar{position:absolute;top:0;left:0;right:0;z-index:10;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.top-logo{font-family:var(--display);font-size:1rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px}
+.top-logo-dot{width:6px;height:6px;background:var(--accent);border-radius:50%}
+.top-info{display:flex;align-items:center;gap:.75rem}
+.top-badge{padding:.3rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;letter-spacing:.03em}
+.top-badge.in{background:rgba(52,211,153,.25);color:var(--accent3);border:1px solid rgba(52,211,153,.4)}
+.top-badge.out{background:rgba(167,139,250,.25);color:var(--accent2);border:1px solid rgba(167,139,250,.4)}
+.top-badge.area{background:rgba(110,231,247,.15);color:var(--accent);border:1px solid rgba(110,231,247,.3)}
+.top-clock{font-family:var(--mono);font-size:.78rem;color:rgba(255,255,255,.7)}
+.top-exit{padding:.35rem .75rem;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:.78rem;border:1px solid rgba(255,255,255,.2);cursor:pointer;font-family:var(--body)}
+.top-exit:hover{background:rgba(255,255,255,.2)}
+
+/* SCAN FRAME */
+.scan-guide{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-60%);
+  width:280px;height:350px;
+  border:2px solid rgba(110,231,247,.4);
+  border-radius:20px;
+  pointer-events:none;
+}
+.scan-guide::before,.scan-guide::after{content:'';position:absolute;width:30px;height:30px;border-color:var(--accent);border-style:solid}
+.scan-guide::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:8px 0 0 0}
+.scan-guide::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 8px 0}
+.scan-guide-tl,.scan-guide-tr,.scan-guide-br{position:absolute;width:30px;height:30px;border-color:var(--accent);border-style:solid}
+.scan-guide-tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 8px 0 0}
+.scan-guide-br{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 8px}
+@keyframes scanLine{0%{top:10%}50%{top:85%}100%{top:10%}}
+.scan-line{position:absolute;left:5%;right:5%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanLine 2.5s ease-in-out infinite}
+
+/* STATUS BAR */
+.status-bar{
+  position:absolute;bottom:0;left:0;right:0;z-index:10;
+  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+  padding:1.5rem;
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+}
+.status-text{font-size:.85rem;color:rgba(255,255,255,.7);font-family:var(--mono);text-align:center}
+.status-hint{font-size:.72rem;color:rgba(255,255,255,.4);text-align:center}
+
+/* RESULT OVERLAY */
+#result-overlay{
+  position:absolute;inset:0;z-index:20;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem;
+}
+#result-overlay.in{background:rgba(52,211,153,.12)}
+#result-overlay.out{background:rgba(167,139,250,.12)}
+.result-card{
+  background:rgba(10,10,15,.92);
+  border:1px solid var(--border2);
+  border-radius:20px;padding:2rem;
+  text-align:center;max-width:340px;width:100%;
+  backdrop-filter:blur(10px);
+}
+.result-card.in{border-color:rgba(52,211,153,.5)}
+.result-card.out{border-color:rgba(167,139,250,.5)}
+.result-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;display:block;border:3px solid var(--accent3)}
+.result-photo.out-photo{border-color:var(--accent2)}
+.result-photo-placeholder{width:80px;height:80px;border-radius:50%;background:var(--surface2);margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.result-type{font-family:var(--mono);font-size:1.1rem;font-weight:500;margin-bottom:.5rem}
+.result-type.in{color:var(--accent3)}
+.result-type.out{color:var(--accent2)}
+.result-name{font-family:var(--display);font-size:1.6rem;font-weight:800;margin-bottom:.25rem;letter-spacing:-.02em}
+.result-id{font-family:var(--mono);font-size:.82rem;color:var(--accent);margin-bottom:.5rem}
+.result-meta{font-size:.78rem;color:var(--text2)}
+.result-time{font-family:var(--mono);font-size:1rem;color:var(--text);margin-top:.5rem;font-weight:500}
+.result-bar{height:4px;border-radius:2px;margin-top:1.25rem;background:var(--border2);overflow:hidden}
+.result-bar-fill{height:100%;border-radius:2px;width:100%;transform-origin:left}
+
+/* DUPLICATE MODAL */
+#dup-modal{
+  position:absolute;inset:0;z-index:30;
+  background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;padding:1.5rem;
+}
+.dup-card{background:var(--bg2);border:1px solid var(--danger);border-radius:16px;padding:1.5rem;max-width:400px;width:100%}
+.dup-title{font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--danger);margin-bottom:.75rem}
+.dup-body{font-size:.85rem;color:var(--text2);margin-bottom:1.25rem;line-height:1.6}
+.dup-btns{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.dup-cancel{padding:.75rem;border-radius:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-family:var(--body);font-size:.9rem;cursor:pointer}
+.dup-confirm{padding:.75rem;border-radius:8px;background:rgba(248,113,113,.15);color:var(--danger);border:1px solid rgba(248,113,113,.4);font-family:var(--body);font-size:.9rem;font-weight:600;cursor:pointer}
+
+/* COUNTER */
+.punch-counter{
+  position:absolute;top:50%;right:1.5rem;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;z-index:10;
+}
+.counter-box{background:rgba(0,0,0,.6);border:1px solid var(--border2);border-radius:10px;padding:.5rem .75rem;text-align:center;backdrop-filter:blur(4px)}
+.counter-num{font-family:var(--display);font-size:1.4rem;font-weight:800}
+.counter-num.cin{color:var(--accent3)}
+.counter-num.cout{color:var(--accent2)}
+.counter-label{font-size:.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+
+@media(max-width:480px){
+  .setup-card{padding:1.25rem}
+  .scan-guide{width:220px;height:280px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="setup-screen">
+  <div class="setup-logo"><div class="setup-logo-dot"></div>ShiftScan</div>
+  <div class="setup-sub">Face Recognition Station — Lead Setup</div>
+  
+  <div class="setup-card">
+    <div class="setup-title">Configure This Station</div>
+    
+    <div class="model-status" id="model-status">
+      <div class="model-dot" id="model-dot"></div>
+      <div>
+        <div id="model-text" style="font-weight:500">AI Models not loaded</div>
+        <div id="model-sub" style="font-size:.72rem;color:var(--text2)">Required for face recognition</div>
+      </div>
+      <button class="load-btn" id="load-btn" onclick="loadModels()">Load</button>
+    </div>
+
+    <div class="fg">
+      <label>Production Area / Line *</label>
+      <select id="setup-area"><option value="">— Select area —</option></select>
+    </div>
+
+    <div class="fg">
+      <label>Punch Type *</label>
+      <div class="punch-btns">
+        <button class="punch-btn" id="btn-in" onclick="selectPunch('IN')">▶ PUNCH IN</button>
+        <button class="punch-btn" id="btn-out" onclick="selectPunch('OUT')">◼ PUNCH OUT</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="start-btn" onclick="startStation()" disabled>Start Face Scanner</button>
+    
+    <div class="back-link">
+      <a href="index.html">← Back to ShiftScan</a>
+      &nbsp;·&nbsp;
+      <span id="enrolled-count" style="color:var(--text2)">Loading employees...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCAN SCREEN ═══ -->
+<div id="scan-screen">
+  <video id="scan-video" playsinline muted autoplay></video>
+  <canvas id="scan-canvas"></canvas>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-logo"><div class="top-logo-dot"></div>FaceScan</div>
+    <div class="top-info">
+      <span class="top-badge area" id="top-area">—</span>
+      <span class="top-badge" id="top-punch">—</span>
+      <span class="top-clock" id="top-clock">—</span>
+      <button class="top-exit" onclick="exitStation()">⚙ Setup</button>
+    </div>
+  </div>
+
+  <!-- Face guide -->
+  <div class="scan-guide">
+    <div class="scan-guide-tr"></div>
+    <div class="scan-guide-br"></div>
+    <div class="scan-line"></div>
+  </div>
+
+  <!-- Punch counter -->
+  <div class="punch-counter">
+    <div class="counter-box">
+      <div class="counter-num cin" id="cnt-in">0</div>
+      <div class="counter-label">IN</div>
+    </div>
+    <div class="counter-box">
+      <div class="counter-num cout" id="cnt-out">0</div>
+      <div class="counter-label">OUT</div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-text" id="status-text">Initializing...</div>
+    <div class="status-hint" id="status-hint">Stand in front of camera</div>
+  </div>
+
+  <!-- Result overlay -->
+  <div id="result-overlay">
+    <div class="result-card" id="result-card">
+      <div id="result-photo-wrap"></div>
+      <div class="result-type" id="result-type">PUNCH IN</div>
+      <div class="result-name" id="result-name">—</div>
+      <div class="result-id" id="result-id">—</div>
+      <div class="result-meta" id="result-area-text">—</div>
+      <div class="result-time" id="result-time">—</div>
+      <div class="result-bar"><div class="result-bar-fill" id="result-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Duplicate modal -->
+  <div id="dup-modal">
+    <div class="dup-card">
+      <div class="dup-title">⚠ Duplicate Punch Detected</div>
+      <div class="dup-body" id="dup-body"></div>
+      <div class="dup-btns">
+        <button class="dup-cancel" onclick="cancelDup()">Cancel</button>
+        <button class="dup-confirm" onclick="confirmDup()">Record Anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  SHARED DATA (same localStorage as ShiftScan)
+// ════════════════════════════════════════════
+const K={E:'ss_e',A:'ss_a',L:'ss_l'};
+function ld(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}
+function sv(k,d){localStorage.setItem(k,JSON.stringify(d));}
+
+let emps=ld(K.E);
+let areas=ld(K.A);
+let log=ld(K.L);
+
+function reloadData(){emps=ld(K.E);areas=ld(K.A);log=ld(K.L);}
+
+// Face descriptors shared with ShiftScan
+let faceDescriptors={};
+function loadDescriptors(){
+  try{
+    const raw=JSON.parse(localStorage.getItem('ss_face_desc')||'{}');
+    Object.keys(raw).forEach(k=>{faceDescriptors[k]=new Float32Array(raw[k]);});
+  }catch{faceDescriptors={};}
+}
+loadDescriptors();
+
+function getPhotos(){
+  try{return JSON.parse(localStorage.getItem('ss_photos')||'{}');}catch{return {};}
+}
+
+// ── UTILS ──
+function fDate(ts){return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});}
+function fTime(ts){return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fISO(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+// ── CLOCK ──
+setInterval(()=>{
+  const el=document.getElementById('top-clock');
+  if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// ════════════════════════════════════════════
+//  SETUP SCREEN
+// ════════════════════════════════════════════
+const MODEL_URL='https://raw.githubusercontent.com/vladmandic/face-api/master/model';
+let modelsLoaded=false;
+let selectedPunch=null;
+
+function populateAreas(){
+  const sel=document.getElementById('setup-area');
+  sel.innerHTML='<option value="">— Select area —</option>';
+  areas.forEach(a=>{
+    const o=document.createElement('option');
+    o.value=a.name;
+    o.textContent=a.name+(a.code?' ['+a.code+']':'');
+    sel.appendChild(o);
+  });
+}
+populateAreas();
+
+function updateEnrolledCount(){
+  loadDescriptors();
+  const n=Object.keys(faceDescriptors).length;
+  const total=emps.length;
+  const el=document.getElementById('enrolled-count');
+  if(el)el.textContent=n+' of '+total+' employees enrolled';
+}
+updateEnrolledCount();
+
+async function loadModels(){
+  const btn=document.getElementById('load-btn');
+  const dot=document.getElementById('model-dot');
+  const txt=document.getElementById('model-text');
+  const sub=document.getElementById('model-sub');
+  btn.disabled=true;btn.textContent='Loading...';
+  dot.className='model-dot loading';
+  txt.textContent='Downloading AI models...';
+  sub.textContent='First time only — please wait';
+  try{
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    txt.textContent='Loading landmarks...';
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    txt.textContent='Loading recognition...';
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    modelsLoaded=true;
+    dot.className='model-dot ready';
+    txt.textContent='✓ Ready — face recognition loaded';
+    sub.textContent='Models cached for instant load next time';
+    btn.textContent='✓';
+    btn.style.background='var(--accent3)';
+    checkStartReady();
+  }catch(e){
+    dot.className='model-dot';
+    txt.textContent='Failed — check internet connection';
+    sub.textContent=e.message;
+    btn.disabled=false;btn.textContent='Retry';
+  }
+}
+
+function selectPunch(type){
+  selectedPunch=type;
+  const bi=document.getElementById('btn-in'),bo=document.getElementById('btn-out');
+  bi.className='punch-btn'+(type==='IN'?' sel-in':'');
+  bo.className='punch-btn'+(type==='OUT'?' sel-out':'');
+  checkStartReady();
+}
+
+function checkStartReady(){
+  const area=document.getElementById('setup-area').value;
+  const btn=document.getElementById('start-btn');
+  const ready=modelsLoaded&&selectedPunch&&area;
+  btn.disabled=!ready;
+  if(!modelsLoaded)btn.textContent='Load models first';
+  else if(!area)btn.textContent='Select an area first';
+  else if(!selectedPunch)btn.textContent='Select punch type';
+  else btn.textContent='▶ Start Face Scanner';
+}
+document.getElementById('setup-area').addEventListener('change',checkStartReady);
+
+// ════════════════════════════════════════════
+//  SCAN STATION
+// ════════════════════════════════════════════
+let scanStream=null;
+let scanning=false;
+let currentArea='';
+let currentPunch='';
+let sessionIn=0,sessionOut=0;
+let pendingPunch=null;
+let lastMatchId=null,lastMatchTs=0;
+
+async function startStation(){
+  reloadData();loadDescriptors();
+  const enrolled=Object.keys(faceDescriptors).length;
+  if(enrolled===0){
+    alert('No employees enrolled yet.\nGo to ShiftScan → Employees → Take Photo for each employee first.');
+    return;
+  }
+  currentArea=document.getElementById('setup-area').value;
+  currentPunch=selectedPunch;
+  // Update top bar
+  document.getElementById('top-area').textContent=currentArea;
+  const pb=document.getElementById('top-punch');
+  pb.textContent=currentPunch==='IN'?'▶ IN':'◼ OUT';
+  pb.className='top-badge '+(currentPunch==='IN'?'in':'out');
+  // Start camera
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}}
+    });
+    const vid=document.getElementById('scan-video');
+    vid.srcObject=scanStream;
+    await new Promise(res=>{vid.onloadedmetadata=()=>vid.play().then(res).catch(res);});
+    // Show scan screen
+    document.getElementById('setup-screen').style.display='none';
+    const ss=document.getElementById('scan-screen');
+    ss.style.display='flex';
+    // Size canvas
+    const canvas=document.getElementById('scan-canvas');
+    canvas.width=vid.videoWidth||1280;canvas.height=vid.videoHeight||720;
+    setStatus('Ready — looking for faces','Stand in front of the camera','var(--text2)');
+    scanning=true;
+    scanLoop();
+  }catch(e){
+    alert('Camera error: '+e.message);
+  }
+}
+
+function exitStation(){
+  scanning=false;
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  document.getElementById('scan-screen').style.display='none';
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('result-overlay').style.display='none';
+  document.getElementById('dup-modal').style.display='none';
+  lastMatchId=null;lastMatchTs=0;
+}
+
+function setStatus(text,hint,color){
+  const st=document.getElementById('status-text');
+  const sh=document.getElementById('status-hint');
+  if(st){st.textContent=text;st.style.color=color||'rgba(255,255,255,.7)';}
+  if(sh&&hint)sh.textContent=hint;
+}
+
+async function scanLoop(){
+  if(!scanning)return;
+  const vid=document.getElementById('scan-video');
+  const canvas=document.getElementById('scan-canvas');
+  if(vid.readyState===vid.HAVE_ENOUGH_DATA&&vid.videoWidth>0){
+    try{
+      const opts=new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.45});
+      const det=await faceapi.detectSingleFace(vid,opts).withFaceLandmarks(true).withFaceDescriptor();
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(det){
+        // Draw detection box
+        const dims=faceapi.matchDimensions(canvas,vid,true);
+        const resized=faceapi.resizeResults(det,dims);
+        // Custom draw — just the box, no labels
+        const box=resized.detection.box;
+        ctx.strokeStyle='rgba(110,231,247,0.8)';
+        ctx.lineWidth=2;
+        ctx.strokeRect(box.x,box.y,box.width,box.height);
+        // Match face
+        const match=findBestMatch(det.descriptor);
+        if(match&&match.distance<0.5){
+          const confidence=Math.round((1-match.distance)*100);
+          setStatus('✓ '+match.name+' — '+confidence+'% match','Processing...','var(--accent3)');
+          const now=Date.now();
+          if(match.empId!==lastMatchId||now-lastMatchTs>5000){
+            lastMatchId=match.empId;lastMatchTs=now;
+            const emp=emps.find(e=>e.id===match.empId);
+            if(emp)processPunch(emp);
+          }
+        }else if(match){
+          setStatus('Face detected — no match','Move closer or look directly at camera','var(--warn)');
+        }else{
+          setStatus('Face detected','Hold still...','var(--text2)');
+        }
+      }else{
+        setStatus('Looking for faces','Stand in front of the camera','rgba(255,255,255,.5)');
+      }
+    }catch(e){console.error('scan err:',e);}
+  }
+  setTimeout(()=>requestAnimationFrame(()=>scanLoop()),150);
+}
+
+function findBestMatch(descriptor){
+  let best=null;
+  Object.keys(faceDescriptors).forEach(empId=>{
+    const stored=faceDescriptors[empId];
+    const dist=faceapi.euclideanDistance(descriptor,stored);
+    const emp=emps.find(e=>e.id===empId);
+    if(!best||dist<best.distance){
+      best={empId,distance:dist,name:emp?emp.first+' '+emp.last:'Unknown'};
+    }
+  });
+  return best;
+}
+
+function processPunch(emp){
+  // Check for duplicate
+  const allPunches=log.filter(l=>l.empId===emp.id);
+  const lastPunch=allPunches[0];
+  if(lastPunch&&lastPunch.type===currentPunch){
+    // Pause scanning and show duplicate warning
+    scanning=false;
+    pendingPunch=emp;
+    const when=fDate(lastPunch.ts)+' at '+fTime(lastPunch.ts);
+    document.getElementById('dup-body').innerHTML=
+      '<b>'+emp.first+' '+emp.last+'</b> already has a PUNCH '+currentPunch+
+      ' recorded on:<br><span style="font-family:var(--mono);font-size:.85rem;color:var(--accent)">'+when+'</span>'+
+      '<br><br>Do you want to record another PUNCH '+currentPunch+'?';
+    document.getElementById('dup-modal').style.display='flex';
+    return;
+  }
+  commitPunch(emp);
+}
+
+function cancelDup(){
+  pendingPunch=null;
+  lastMatchId=null;lastMatchTs=0;
+  document.getElementById('dup-modal').style.display='none';
+  scanning=true;
+  scanLoop();
+}
+
+function confirmDup(){
+  document.getElementById('dup-modal').style.display='none';
+  if(pendingPunch){
+    commitPunch(pendingPunch);
+    pendingPunch=null;
+  }
+}
+
+function commitPunch(emp){
+  log=ld(K.L); // reload fresh
+  const entry={
+    id:Date.now()+Math.random().toString(36).substr(2,4),
+    empId:emp.id,
+    name:emp.first+' '+emp.last,
+    area:currentArea,
+    type:currentPunch,
+    ts:Date.now()
+  };
+  log.unshift(entry);sv(K.L,log);
+  // Update counters
+  if(currentPunch==='IN'){sessionIn++;document.getElementById('cnt-in').textContent=sessionIn;}
+  else{sessionOut++;document.getElementById('cnt-out').textContent=sessionOut;}
+  showResult(emp,entry);
+}
+
+let resultTimer=null;
+function showResult(emp,entry){
+  scanning=false;
+  const overlay=document.getElementById('result-overlay');
+  const card=document.getElementById('result-card');
+  const photos=getPhotos();
+  // Photo or placeholder
+  const pw=document.getElementById('result-photo-wrap');
+  if(photos[emp.id]){
+    pw.innerHTML='<img src="'+photos[emp.id]+'" class="result-photo'+(entry.type==='OUT'?' out-photo':'')+'" alt="">';
+  }else{
+    pw.innerHTML='<div class="result-photo-placeholder">👤</div>';
+  }
+  document.getElementById('result-type').textContent=entry.type==='IN'?'▶ PUNCH IN':'◼ PUNCH OUT';
+  document.getElementById('result-type').className='result-type '+(entry.type==='IN'?'in':'out');
+  document.getElementById('result-name').textContent=emp.first+' '+emp.last;
+  document.getElementById('result-id').textContent=emp.id;
+  document.getElementById('result-area-text').textContent=currentArea+(emp.dept?' · '+emp.dept:'');
+  document.getElementById('result-time').textContent=fTime(entry.ts);
+  card.className='result-card '+(entry.type==='IN'?'in':'out');
+  overlay.className='result-overlay '+(entry.type==='IN'?'in':'out');
+  overlay.style.display='flex';
+  // Progress bar animation
+  const bar=document.getElementById('result-bar-fill');
+  bar.style.background=entry.type==='IN'?'var(--accent3)':'var(--accent2)';
+  bar.style.transition='none';bar.style.transform='scaleX(1)';
+  setTimeout(()=>{bar.style.transition='transform 3s linear';bar.style.transform='scaleX(0)';},50);
+  // Auto hide after 3 seconds
+  if(resultTimer)clearTimeout(resultTimer);
+  resultTimer=setTimeout(()=>{
+    overlay.style.display='none';
+    lastMatchId=null;lastMatchTs=0;
+    scanning=true;
+    scanLoop();
+  },3000);
+}
+
+// Reload data periodically in case ShiftScan adds employees
+setInterval(()=>{if(!scanning)return;reloadData();loadDescriptors();},30000);
+</script>
+</body>
+</html>
