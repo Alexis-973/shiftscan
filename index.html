@@ -195,7 +195,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
           <p style="font-size:.72rem;color:var(--text2);margin-bottom:.5rem">Or type Employee ID manually:</p>
           <div class="mi">
-            <div class="fg" style="flex:1"><input type="text" id="mid" placeholder="e.g. EMP-0001"></div>
+            <div class="fg" style="flex:1"><input type="text" id="mid" placeholder="Scan barcode or type ID / number e.g. 0001"></div>
             <button class="btn bs" onclick="manPunch()">Punch</button>
           </div>
         </div>
@@ -228,7 +228,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div class="frow">
       <div class="fg"><label>Position / Role</label><input id="er" placeholder="e.g. Line Operator"></div>
-      <div class="fg"><label>Custom ID (or leave blank to auto)</label><input id="ei" placeholder="Auto: EMP-0004"></div>
+      <div class="fg"><label>Custom ID (or leave blank to auto)</label><input id="ei" placeholder="Auto-generated or use simple number e.g. 0001"></div>
     </div>
     <div class="bg"><button class="btn bp" onclick="addEmp()">+ Add Employee</button><button class="btn bs" onclick="clrEmp()">Clear</button></div>
   </div>
@@ -498,7 +498,7 @@ function scanFrame(){
         if(ss){ss.textContent='✓ QR found: '+res.data.trim();ss.style.color='var(--accent3)';}
         if(res.data.trim()!==lastId||now-lastTs>3000){
           lastId=res.data.trim();lastTs=now;
-          doPunch(res.data.trim());
+          doPunch(res.data.replace(/[\r\n\t]/g,'').trim());
         }
       } else {
         if(ss){ss.textContent='Scanning… hold QR code steady in frame';ss.style.color='var(--text2)';}
@@ -515,7 +515,7 @@ function manPunch(){
   const id=document.getElementById('mid').value.trim();
   if(!area){toast('Select a production area first','var(--danger)');return;}
   if(!id){toast('Enter an employee ID','var(--danger)');return;}
-  doPunch(id);
+  doPunch(id.replace(/[\r\n\t]/g,'').trim());
   document.getElementById('mid').value='';
 }
 
@@ -555,8 +555,16 @@ function doPunch(empId){
   if(!area){toast('Select a production area first','var(--danger)');return;}
   if(!selectedPunchType){toast('Select PUNCH IN or PUNCH OUT first','var(--danger)');return;}
 
-  const emp = emps.find(e=>e.id.toLowerCase()===empId.toLowerCase());
-  if(!emp){toast('Unknown ID: '+empId,'var(--danger)');return;}
+  // Sanitize scanned/typed ID — remove extra spaces, newlines, special chars
+  // Also try matching with and without dashes to handle helmet number formats
+  const cleanId = empId.replace(/[\r\n\t]/g,'').trim();
+  
+  // Try multiple match strategies in order
+  const emp = emps.find(e=>e.id.toLowerCase()===cleanId.toLowerCase())           // exact match
+    || emps.find(e=>e.id.toLowerCase()===cleanId.replace(/[^a-z0-9]/gi,'').toLowerCase() && e.id.replace(/[^a-z0-9]/gi,'').toLowerCase()===cleanId.replace(/[^a-z0-9]/gi,'').toLowerCase()) // strip all special chars
+    || emps.find(e=>e.id.replace(/[^0-9]/g,'')=== cleanId.replace(/[^0-9]/g,'') && cleanId.replace(/[^0-9]/g,'').length>=3); // match by number only if 3+ digits
+
+  if(!emp){toast('Unknown ID: "'+cleanId+'" — check employee list','var(--danger)');return;}
   if(!emp.active){toast(emp.first+' '+emp.last+' is inactive','var(--warn)');return;}
 
   // Safety check: find last punch ever (not just today) for this employee
