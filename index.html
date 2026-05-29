@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ShiftScan">
+<title>ShiftScan — Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="jsqr.js"></script>
+<script src="qrcode.js"></script>
+<script src="xlsx.js"></script>
+</head>
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a25;--surface:#1e1e2e;--surface2:#252538;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--accent:#6ee7f7;--accent2:#a78bfa;--accent3:#34d399;--danger:#f87171;--warn:#fbbf24;--text:#f0f0ff;--text2:#9090b0;--mono:'DM Mono',monospace;--display:'Syne',sans-serif;--body:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);min-height:100vh}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
+.hdr-time{font-family:var(--mono);font-size:0.78rem;color:var(--text2)}
+.nav{display:flex;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{flex:1;min-width:72px;padding:.65rem .4rem;background:none;border:none;color:var(--text2);font-family:var(--body);font-size:.72rem;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;transition:color .2s;white-space:nowrap}
+.nb svg{width:17px;height:17px}
+.nb.on{color:var(--accent);border-bottom-color:var(--accent)}
+.nb:hover:not(.on){color:var(--text)}
+.main{flex:1;overflow:auto}
+.pg{display:none;padding:1.5rem;max-width:900px;margin:0 auto}
+.pg.on{display:block}
+.ptitle{font-family:var(--display);font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.2rem}
+.psub{font-size:.82rem;color:var(--text2);margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.ctitle{font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:1rem}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+.frow.t{grid-template-columns:1fr 1fr 1fr}
+.frow.s{grid-template-columns:1fr}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.03em}
+.fg input,.fg select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.6rem .75rem;color:var(--text);font-family:var(--body);font-size:.88rem;outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus{border-color:var(--accent)}
+.fg input::placeholder{color:var(--text2)}
+.fg select option{background:var(--bg3)}
+.btn{padding:.6rem 1.2rem;border-radius:8px;font-family:var(--body);font-size:.85rem;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.bp{background:var(--accent);color:#0a0a0f}.bp:hover{opacity:.9}
+.bs{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}.bs:hover{background:var(--bg3)}
+.bd{background:rgba(248,113,113,.12);color:var(--danger);border:1px solid rgba(248,113,113,.25)}.bd:hover{background:rgba(248,113,113,.22)}
+.bg2{background:rgba(52,211,153,.12);color:var(--accent3);border:1px solid rgba(52,211,153,.25)}.bg2:hover{background:rgba(52,211,153,.22)}
+.bsm{padding:.38rem .7rem;font-size:.78rem}
+.bg{display:flex;gap:.5rem;flex-wrap:wrap}
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);background:var(--bg3);border-bottom:1px solid var(--border)}
+td{padding:.7rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:.04em}
+.bi{background:rgba(52,211,153,.15);color:var(--accent3)}
+.bo{background:rgba(167,139,250,.15);color:var(--accent2)}
+.ba{background:rgba(110,231,247,.1);color:var(--accent)}
+.sl{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start}
+.sbox{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:0}
+.stitle{font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+#vc{position:relative;width:100%;aspect-ratio:1;background:#000;border-radius:8px;overflow:hidden;border:1px solid var(--border2)}
+#sv{width:100%;height:100%;object-fit:cover}
+.so{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.sf{width:55%;height:55%;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,.4);position:relative}
+.sf::before,.sf::after{content:'';position:absolute;width:18px;height:18px;border-color:var(--accent);border-style:solid}
+.sf::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.sf::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+@keyframes sl{0%{top:10%}50%{top:85%}100%{top:10%}}
+.sl-bar{position:absolute;left:5%;right:5%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sl 2s ease-in-out infinite}
+#sph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--bg3)}
+#ss{position:absolute;bottom:6px;left:6px;right:6px;background:rgba(0,0,0,.7);border-radius:6px;padding:4px 8px;font-size:.7rem;font-family:var(--mono);color:var(--text2);display:none;text-align:center}
+.mi{display:flex;gap:8px}
+.mi input{flex:1}
+.pr{margin-top:1rem;padding:1rem;border-radius:8px;border:1px solid var(--border);display:none}
+.pr.show{display:block}
+.pr.in{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)}
+.pr.out{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08)}
+.prtype{font-family:var(--mono);font-size:1.4rem;font-weight:500;margin-bottom:4px}
+.prname{font-family:var(--display);font-size:1.05rem;font-weight:700}
+.prdet{font-size:.78rem;color:var(--text2);margin-top:3px}
+.rp{margin-top:1rem}
+.pi{display:flex;align-items:center;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.8rem}
+.pi:last-child{border-bottom:none}
+.pn{font-weight:500}
+.pm{color:var(--text2);font-size:.7rem}
+.qg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem}
+.qc{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;transition:border-color .2s}
+.qc:hover{border-color:var(--accent)}
+.qw{background:#fff;border-radius:6px;padding:6px;display:inline-block;margin-bottom:8px;line-height:0}
+.qw img{display:block;width:130px;height:130px;border-radius:2px}
+.qn{font-weight:600;font-size:.88rem;margin-bottom:2px}
+.qi{font-family:var(--mono);font-size:.7rem;color:var(--accent)}
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.sl2{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.sv{font-family:var(--display);font-size:1.7rem;font-weight:800}
+.sv.c{color:var(--accent)}.sv.p{color:var(--accent2)}.sv.g{color:var(--accent3)}.sv.y{color:var(--warn)}
+.lf{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end}
+.lf .fg{min-width:130px}
+.at{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.8rem;margin:3px}
+.ar{cursor:pointer;color:var(--text2)}.ar:hover{color:var(--danger)}
+#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);color:var(--text);border:1px solid var(--border2);padding:.7rem 1.2rem;border-radius:10px;font-size:.85rem;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.mb{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.mb.open{display:flex}
+.md{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.5rem;max-width:460px;width:100%}
+.mt{font-family:var(--display);font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+.chip{font-family:var(--mono);font-size:.73rem;background:rgba(110,231,247,.1);color:var(--accent);padding:2px 6px;border-radius:4px}
+.es{text-align:center;padding:3rem 1rem;color:var(--text2)}
+@media(max-width:640px){.sl{grid-template-columns:1fr}.sr{grid-template-columns:1fr 1fr}.frow{grid-template-columns:1fr}.frow.t{grid-template-columns:1fr}.pg{padding:1rem}}
+@media print{.nav,.hdr,.bg,.lf{display:none!important}.pg{display:block!important;padding:0}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo"><div class="logo-dot"></div>ShiftScan</div>
+  <div class="hdr-time" id="clk"></div>
+</header>
+
+<nav class="nav">
+  <button class="nb on" onclick="go('scan')" id="n-scan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M17 17v4M14 21h3"/></svg>
+    Scanner
+  </button>
+  <button class="nb" onclick="go('face')" id="n-face">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/></svg>
+    Face Scan
+  </button>
+  <button class="nb" onclick="window.location.href='face.html'" id="n-face">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    Face Scan
+  </button>
+  <button class="nb" onclick="go('emp')" id="n-emp">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 11l2 2 4-4"/></svg>
+    Employees
+  </button>
+  <button class="nb" onclick="go('qr')" id="n-qr">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+    QR Codes
+  </button>
+  <button class="nb" onclick="go('areas')" id="n-areas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Areas
+  </button>
+  <button class="nb" onclick="go('log')" id="n-log">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Log
+  </button>
+</nav>
+
+<main class="main">
+
+<!-- SCANNER -->
+<div class="pg on" id="pg-scan">
+  <p class="ptitle">Shift Scanner</p>
+  <p class="psub">Select area and punch type, then scan or enter employee ID.</p>
+  <div class="sl">
+    <div>
+      <div class="sbox">
+        <div class="stitle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Camera Scanner
+        </div>
+        <div class="frow s" style="margin-bottom:1rem">
+          <div class="fg"><label>Production Area / Line *</label><select id="s-area"><option value="">— Select area —</option></select></div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.03em;display:block;margin-bottom:.5rem">Punch Type *</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <button id="pt-in" onclick="setPunchType('IN')" style="padding:.75rem;border-radius:8px;font-family:var(--body);font-size:.95rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s;letter-spacing:.03em">▶ PUNCH IN</button>
+            <button id="pt-out" onclick="setPunchType('OUT')" style="padding:.75rem;border-radius:8px;font-family:var(--body);font-size:.95rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s;letter-spacing:.03em">◼ PUNCH OUT</button>
+          </div>
+          <div id="pt-hint" style="font-size:.72rem;color:var(--text2);margin-top:.4rem;text-align:center;min-height:1rem">Select IN or OUT before scanning</div>
+        </div>
+        <div id="vc">
+          <video id="sv" playsinline muted autoplay></video>
+          <div class="so"><div class="sf"><div class="sl-bar"></div></div></div>
+          <div id="sph" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--bg3)">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span style="font-size:.78rem;color:var(--text2)">Camera not started</span>
+          </div>
+          <div id="ss"></div>
+        </div>
+        <div class="bg" style="margin-top:.75rem">
+          <button class="btn bp" onclick="startCam()" id="bc-start">▶ Start Camera</button>
+          <button class="btn bs" onclick="stopCam()" id="bc-stop" style="display:none">■ Stop</button>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <p style="font-size:.72rem;color:var(--text2);margin-bottom:.5rem">Or type Employee ID manually:</p>
+          <div class="mi">
+            <div class="fg" style="flex:1"><input type="text" id="mid" placeholder="Scan barcode or type ID / number e.g. 0001"></div>
+            <button class="btn bs" onclick="manPunch()">Punch</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sbox">
+        <div class="stitle">Last Punch</div>
+        <div id="pr-box" class="pr"><div class="prtype" id="pr-type">IN</div><div class="prname" id="pr-name">—</div><div class="prdet" id="pr-det">—</div></div>
+        <div id="pr-empty" style="text-align:center;padding:2rem 0;color:var(--text2);font-size:.82rem">No punch yet this session</div>
+      </div>
+      <div class="sbox" style="margin-top:1rem">
+        <div class="stitle">Recent Activity</div>
+        <div id="rp"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FACE SCAN -->
+<div class="pg" id="pg-face">
+  <p class="ptitle">Face Scan</p>
+  <p class="psub">Look at the camera to punch in or out. Models load once from internet on first use.</p>
+  
+  <div id="face-model-status" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px">
+    <div id="face-model-dot" style="width:10px;height:10px;border-radius:50%;background:var(--warn);flex-shrink:0"></div>
+    <div>
+      <div id="face-model-text" style="font-size:.85rem;font-weight:500">Models not loaded</div>
+      <div id="face-model-sub" style="font-size:.72rem;color:var(--text2)">Click "Load Models" to initialize face recognition</div>
+    </div>
+    <button class="btn bp" onclick="loadFaceModels()" id="btn-load-models" style="margin-left:auto">Load Models</button>
+  </div>
+
+  <div class="sl">
+    <div>
+      <div class="sbox">
+        <div class="stitle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Face Scanner
+        </div>
+        <div class="frow s" style="margin-bottom:1rem">
+          <div class="fg"><label>Production Area / Line *</label><select id="f-area"><option value="">— Select area —</option></select></div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.03em;display:block;margin-bottom:.5rem">Punch Type *</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <button id="fp-in" onclick="setFacePunchType('IN')" style="padding:.75rem;border-radius:8px;font-family:var(--body);font-size:.95rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s">▶ PUNCH IN</button>
+            <button id="fp-out" onclick="setFacePunchType('OUT')" style="padding:.75rem;border-radius:8px;font-family:var(--body);font-size:.95rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s">◼ PUNCH OUT</button>
+          </div>
+          <div id="fp-hint" style="font-size:.72rem;color:var(--text2);margin-top:.4rem;text-align:center;min-height:1rem">Select IN or OUT before scanning</div>
+        </div>
+        <div id="face-vc" style="position:relative;width:100%;aspect-ratio:1;background:#000;border-radius:8px;overflow:hidden;border:1px solid var(--border2)">
+          <video id="face-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
+          <canvas id="face-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+          <div id="face-ph" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--bg3)">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <span style="font-size:.78rem;color:var(--text2)">Camera not started</span>
+          </div>
+          <div id="face-status" style="position:absolute;bottom:6px;left:6px;right:6px;background:rgba(0,0,0,.7);border-radius:6px;padding:4px 8px;font-size:.7rem;font-family:var(--mono);color:var(--text2);display:none;text-align:center"></div>
+        </div>
+        <div class="bg" style="margin-top:.75rem">
+          <button class="btn bp" onclick="startFaceCam()" id="btn-face-start">▶ Start Camera</button>
+          <button class="btn bs" onclick="stopFaceCam()" id="btn-face-stop" style="display:none">■ Stop</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sbox">
+        <div class="stitle">Last Recognition</div>
+        <div id="face-result" class="pr"></div>
+        <div id="face-result-empty" style="text-align:center;padding:2rem 0;color:var(--text2);font-size:.82rem">No recognition yet</div>
+      </div>
+      <div class="sbox" style="margin-top:1rem">
+        <div class="stitle">Enrolled Employees</div>
+        <div id="face-enrolled-list" style="font-size:.82rem;color:var(--text2)">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEES -->
+<div class="pg" id="pg-emp">
+  <p class="ptitle">Employee Registry</p>
+  <p class="psub">Add employees — each gets a unique ID and QR code.</p>
+  <div class="card">
+    <p class="ctitle">Add New Employee</p>
+    <div class="frow t">
+      <div class="fg"><label>First Name *</label><input id="ef" placeholder="First name"></div>
+      <div class="fg"><label>Last Name *</label><input id="el" placeholder="Last name"></div>
+      <div class="fg"><label>Department</label><input id="ed" placeholder="e.g. Assembly"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Position / Role</label><input id="er" placeholder="e.g. Line Operator"></div>
+      <div class="fg"><label>Custom ID (or leave blank to auto)</label><input id="ei" placeholder="Auto-generated or use simple number e.g. 0001"></div>
+    </div>
+    <div style="margin-bottom:.75rem">
+      <label style="font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.03em;display:block;margin-bottom:.5rem">Employee Photo (for Face Recognition)</label>
+      <div style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
+        <div id="emp-photo-preview" style="width:80px;height:80px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="bg" style="margin-bottom:.5rem">
+            <button class="btn bs bsm" onclick="openEmpCamera()" id="btn-emp-cam">📷 Take Photo</button>
+            <button class="btn bs bsm" onclick="retakeEmpPhoto()" id="btn-emp-retake" style="display:none">↺ Retake</button>
+          </div>
+          <div id="emp-cam-wrap" style="display:none">
+            <div style="position:relative;width:200px;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#000;margin-bottom:.5rem">
+              <video id="emp-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
+              <div style="position:absolute;inset:0;border:2px solid var(--accent);border-radius:8px;pointer-events:none;display:flex;align-items:center;justify-content:center">
+                <div style="width:60%;height:80%;border:1px dashed rgba(110,231,247,.5);border-radius:50%"></div>
+              </div>
+            </div>
+            <canvas id="emp-snap-canvas" style="display:none"></canvas>
+            <button class="btn bp bsm" onclick="captureEmpPhoto()">📸 Capture</button>
+          </div>
+          <div style="font-size:.7rem;color:var(--text2);margin-top:.25rem">Take photo with PPE on (helmet + hairnet) for best accuracy</div>
+        </div>
+      </div>
+    </div>
+    <div class="bg"><button class="btn bp" onclick="window._addEmpWithFace?window._addEmpWithFace():addEmp()">+ Add Employee</button><button class="btn bs" onclick="clrEmp()">Clear</button></div>
+  </div>
+  <div class="card" style="padding:0">
+    <div style="padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+      <p class="ctitle" style="margin:0">Employee List</p>
+      <input id="esrch" placeholder="Search..." oninput="renderEmps()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.38rem .7rem;color:var(--text);font-size:.83rem;outline:none;width:180px">
+    </div>
+    <div class="tw" style="border:none;border-radius:0">
+      <table><thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="etb"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- QR CODES -->
+<div class="pg" id="pg-qr">
+  <p class="ptitle">QR Code Cards</p>
+  <p class="psub">Print these and give one to each employee. The QR encodes their unique ID.</p>
+  <div class="bg" style="margin-bottom:1.5rem">
+    <button class="btn bs" onclick="window.print()">🖨 Print All</button>
+  </div>
+  <div class="qg" id="qg"></div>
+</div>
+
+<!-- AREAS -->
+<div class="pg" id="pg-areas">
+  <p class="ptitle">Production Areas</p>
+  <p class="psub">Define production lines or areas available at punch-in.</p>
+  <div class="card">
+    <p class="ctitle">Add Area</p>
+    <div class="frow">
+      <div class="fg"><label>Area Name *</label><input id="an" placeholder="e.g. Line A, Packing"></div>
+      <div class="fg"><label>Code (optional)</label><input id="ac" placeholder="e.g. L-A"></div>
+    </div>
+    <button class="btn bp" onclick="addArea()">+ Add Area</button>
+  </div>
+  <div class="card">
+    <p class="ctitle">Configured Areas</p>
+    <div id="atags"></div>
+    <div id="aempty" style="color:var(--text2);font-size:.85rem;display:none">No areas yet.</div>
+  </div>
+  <div class="card">
+    <p class="ctitle">Area Stats</p>
+    <div class="tw"><table><thead><tr><th>Area</th><th>Code</th><th>Total Punches</th></tr></thead><tbody id="astb"></tbody></table></div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div class="pg" id="pg-log">
+  <p class="ptitle">Attendance Log</p>
+  <p class="psub">Full punch history — filter and export.</p>
+  <div class="sr">
+    <div class="sc"><div class="sl2">Total Records</div><div class="sv c" id="st-tot">0</div></div>
+    <div class="sc"><div class="sl2">Today IN</div><div class="sv g" id="st-in">0</div></div>
+    <div class="sc"><div class="sl2">Today OUT</div><div class="sv p" id="st-out">0</div></div>
+    <div class="sc"><div class="sl2">Active Areas</div><div class="sv y" id="st-ar">0</div></div>
+  </div>
+  <div class="lf">
+    <div class="fg"><label>Search</label><input id="ls" placeholder="Name or ID..." oninput="renderLog()"></div>
+    <div class="fg"><label>Area</label><select id="la" onchange="renderLog()"><option value="">All Areas</option></select></div>
+    <div class="fg"><label>Type</label><select id="lt" onchange="renderLog()"><option value="">All</option><option value="IN">IN</option><option value="OUT">OUT</option></select></div>
+    <div class="fg"><label>Date</label><input type="date" id="ld" oninput="renderLog()"></div>
+    <div class="fg" style="justify-content:flex-end"><label style="opacity:0">.</label><button class="btn bs bsm" onclick="clrF()">Clear Filters</button></div>
+  </div>
+  <div class="bg" style="margin-bottom:1rem">
+    <button class="btn bg2" onclick="expCSV()">⬇ Export CSV</button>
+    <button class="btn bg2" onclick="expXLSX()">⬇ Export Excel</button>
+    <button class="btn bd bsm" onclick="clrLog()">Clear All</button>
+  </div>
+  <div class="tw">
+    <table><thead><tr><th>#</th><th>ID</th><th>Name</th><th>Area</th><th>Type</th><th>Date</th><th>Time</th><th></th></tr></thead><tbody id="ltb"></tbody></table>
+  </div>
+</div>
+
+</main>
+
+<div id="toast"></div>
+<div class="mb" id="modal" onclick="closeMod()">
+  <div class="md" onclick="event.stopPropagation()">
+    <div class="mt" id="m-title"></div>
+    <div id="m-body"></div>
+    <div class="bg" style="margin-top:1rem;justify-content:flex-end">
+      <button class="btn bs" onclick="closeMod()">Cancel</button>
+      <button class="btn bd" id="m-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const K={E:'ss_e',A:'ss_a',L:'ss_l'};
+function ld(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}
+function sv(k,d){localStorage.setItem(k,JSON.stringify(d));}
+let emps=ld(K.E), areas=ld(K.A), log=ld(K.L);
+
+if(!emps.length){
+  emps=[
+    {id:'EMP-0001',first:'Maria',last:'Garcia',dept:'Assembly',role:'Line Operator',active:true},
+    {id:'EMP-0002',first:'James',last:'Chen',dept:'Packing',role:'Packer',active:true},
+    {id:'EMP-0003',first:'Sofia',last:'Reyes',dept:'Quality',role:'QC Inspector',active:true},
+  ];
+  sv(K.E,emps);
+}
+if(!areas.length){
+  areas=[{name:'Line A',code:'L-A'},{name:'Line B',code:'L-B'},{name:'Packing',code:'PKG'},{name:'Quality Control',code:'QC'}];
+  sv(K.A,areas);
+}
+
+// ── UTILS ──
+function genId(){const ns=emps.map(e=>parseInt(e.id.replace(/\D/g,''))).filter(n=>!isNaN(n));const nx=ns.length?Math.max(...ns)+1:1;return 'EMP-'+String(nx).padStart(4,'0');}
+function fDate(ts){return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});}
+function fTime(ts){return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fISO(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function toast(msg,col){const t=document.getElementById('toast');t.textContent=msg;t.style.borderColor=col||'var(--border2)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function modal(title,body,fn){document.getElementById('m-title').textContent=title;document.getElementById('m-body').innerHTML=body;document.getElementById('m-ok').onclick=()=>{fn();closeMod();};document.getElementById('modal').classList.add('open');}
+function closeMod(){document.getElementById('modal').classList.remove('open');}
+
+// ── CLOCK ──
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);
+
+// ── NAV ──
+function go(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  document.getElementById('n-'+id).classList.add('on');
+  if(id==='qr')renderQR();
+  if(id==='log'){updateStats();renderLog();}
+  if(id==='emp')renderEmps();
+  if(id==='areas')renderAreas();
+  if(id!=='scan')stopCam();
+}
+
+// ── EMPLOYEES ──
+function addEmp(){
+  const f=document.getElementById('ef').value.trim();
+  const l=document.getElementById('el').value.trim();
+  const d=document.getElementById('ed').value.trim();
+  const r=document.getElementById('er').value.trim();
+  let id=document.getElementById('ei').value.trim();
+  if(!f||!l){toast('First and last name required','var(--danger)');return;}
+  if(!id)id=genId();
+  if(emps.find(e=>e.id===id)){toast('ID already exists','var(--danger)');return;}
+  emps.push({id,first:f,last:l,dept:d,role:r,active:true});
+  sv(K.E,emps);clrEmp();renderEmps();refreshSels();
+  toast(f+' '+l+' added ('+id+')','var(--accent3)');
+}
+function clrEmp(){['ef','el','ed','er','ei'].forEach(i=>document.getElementById(i).value='');}
+function renderEmps(){
+  const q=(document.getElementById('esrch').value||'').toLowerCase();
+  const list=q?emps.filter(e=>(e.first+' '+e.last+' '+e.id+' '+e.dept+' '+e.role).toLowerCase().includes(q)):emps;
+  const tb=document.getElementById('etb');
+  if(!list.length){tb.innerHTML='<tr><td colspan="6"><div class="es">No employees found.</div></td></tr>';return;}
+  tb.innerHTML=list.map(e=>`<tr>
+    <td><span class="chip">${e.id}</span></td>
+    <td style="font-weight:500">${e.first} ${e.last}</td>
+    <td>${e.dept||'—'}</td><td>${e.role||'—'}</td>
+    <td><span class="badge ${e.active?'bi':'bo'}">${e.active?'Active':'Inactive'}</span></td>
+    <td><div class="bg"><button class="btn bs bsm" onclick="toggleEmp('${e.id}')">${e.active?'Deactivate':'Activate'}</button><button class="btn bd bsm" onclick="delEmp('${e.id}')">Remove</button></div></td>
+  </tr>`).join('');
+}
+function toggleEmp(id){const e=emps.find(x=>x.id===id);if(e){e.active=!e.active;sv(K.E,emps);renderEmps();}}
+function delEmp(id){modal('Remove Employee','Remove <b>'+id+'</b>? Attendance records kept.',()=>{emps=emps.filter(e=>e.id!==id);sv(K.E,emps);renderEmps();toast('Removed');});}
+
+// ── AREAS ──
+function addArea(){
+  const n=document.getElementById('an').value.trim();
+  const c=document.getElementById('ac').value.trim();
+  if(!n){toast('Area name required','var(--danger)');return;}
+  if(areas.find(a=>a.name.toLowerCase()===n.toLowerCase())){toast('Area already exists','var(--danger)');return;}
+  areas.push({name:n,code:c});sv(K.A,areas);
+  document.getElementById('an').value='';document.getElementById('ac').value='';
+  renderAreas();refreshSels();toast('"'+n+'" added','var(--accent3)');
+}
+function removeArea(n){areas=areas.filter(a=>a.name!==n);sv(K.A,areas);renderAreas();refreshSels();toast('Area removed');}
+function renderAreas(){
+  const wrap=document.getElementById('atags'),empty=document.getElementById('aempty');
+  if(!areas.length){wrap.innerHTML='';empty.style.display='block';}
+  else{empty.style.display='none';wrap.innerHTML=areas.map(a=>`<span class="at">${a.name}${a.code?' <span style="color:var(--accent);font-family:var(--mono);font-size:.68rem">[${a.code}]</span>':''}<span class="ar" onclick="removeArea('${a.name}')">×</span></span>`).join('');}
+  document.getElementById('astb').innerHTML=areas.map(a=>`<tr><td>${a.name}</td><td><span class="chip">${a.code||'—'}</span></td><td>${log.filter(l=>l.area===a.name).length}</td></tr>`).join('');
+}
+function refreshSels(){
+  ['s-area','la'].forEach(id=>{
+    const sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML=id==='s-area'?'<option value="">— Select area —</option>':'<option value="">All Areas</option>';
+    areas.forEach(a=>{const o=document.createElement('option');o.value=a.name;o.textContent=a.name+(a.code?' ['+a.code+']':'');sel.appendChild(o);});
+    if(cur)sel.value=cur;
+  });
+}
+refreshSels();
+
+// ── QR CODES ──
+function renderQR(){
+  const grid=document.getElementById('qg');
+  const active=emps.filter(e=>e.active);
+  if(!active.length){grid.innerHTML='<div class="es">Add employees first.</div>';return;}
+  grid.innerHTML=active.map(e=>`
+    <div class="qc">
+      <div class="qw"><img id="qi-${e.id.replace(/-/g,'_')}" src="" width="130" height="130" alt="${e.id}"></div>
+      <div class="qn">${e.first} ${e.last}</div>
+      <div class="qi">${e.id}</div>
+      ${e.dept?'<div style="font-size:.68rem;color:var(--text2);margin-top:2px">'+e.dept+'</div>':''}
+    </div>`).join('');
+  active.forEach(e=>{
+    const img=document.getElementById('qi-'+e.id.replace(/-/g,'_'));
+    if(!img)return;
+    try{
+      window.QRCodeLib.toDataURL(e.id,{errorCorrectionLevel:'H',width:130,margin:2,color:{dark:'#000000',light:'#ffffff'}},function(err,url){
+        if(!err&&img){img.src=url;img.style.borderRadius='2px';}
+        else{img.outerHTML='<div style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:red">QR error</div>';}
+      });
+    }catch(err){console.error('QR:',err);}
+  });
+}
+
+// ── SCANNER ──
+let stream=null,scanning=false,lastId=null,lastTs=0;
+const scanC=document.createElement('canvas');
+const scanX=scanC.getContext('2d',{willReadFrequently:true});
+
+async function startCam(){
+  const area=document.getElementById('s-area').value;
+  if(!area){toast('Select a production area first','var(--danger)');return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
+    const vid=document.getElementById('sv');
+    vid.srcObject=stream;
+    await new Promise(res=>{vid.onloadedmetadata=()=>vid.play().then(res).catch(res);});
+    document.getElementById('sph').style.display='none';
+    document.getElementById('bc-start').style.display='none';
+    document.getElementById('bc-stop').style.display='';
+    const ss=document.getElementById('ss');
+    ss.style.display='block';ss.style.color='var(--text2)';ss.textContent='Scanning… hold QR code steady';
+    scanning=true;
+    requestAnimationFrame(scanFrame);
+    toast('Camera ready — hold QR code in the frame','var(--accent)');
+  }catch(e){
+    console.error(e);
+    toast('Camera error: '+e.message,'var(--danger)');
+  }
+}
+
+function stopCam(){
+  scanning=false;
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  const vid=document.getElementById('sv');
+  vid.srcObject=null;vid.onloadedmetadata=null;
+  document.getElementById('sph').style.display='';
+  document.getElementById('bc-start').style.display='';
+  document.getElementById('bc-stop').style.display='none';
+  const ss=document.getElementById('ss');
+  if(ss){ss.style.display='none';}
+}
+
+function scanFrame(){
+  if(!scanning)return;
+  const vid=document.getElementById('sv');
+  if(vid.readyState===vid.HAVE_ENOUGH_DATA&&vid.videoWidth>0){
+    scanC.width=vid.videoWidth;scanC.height=vid.videoHeight;
+    scanX.drawImage(vid,0,0,scanC.width,scanC.height);
+    const imgData=scanX.getImageData(0,0,scanC.width,scanC.height);
+    const ss=document.getElementById('ss');
+    if(typeof jsQR!=='undefined'){
+      const res=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'attemptBoth'});
+      if(res&&res.data){
+        const now=Date.now();
+        if(ss){ss.textContent='✓ QR found: '+res.data.trim();ss.style.color='var(--accent3)';}
+        if(res.data.trim()!==lastId||now-lastTs>3000){
+          lastId=res.data.trim();lastTs=now;
+          doPunch(res.data.replace(/[\r\n\t]/g,'').trim());
+        }
+      } else {
+        if(ss){ss.textContent='Scanning… hold QR code steady in frame';ss.style.color='var(--text2)';}
+      }
+    } else {
+      if(ss){ss.textContent='⚠ jsQR not loaded';ss.style.color='var(--danger)';}
+    }
+  }
+  requestAnimationFrame(scanFrame);
+}
+
+function manPunch(){
+  const area=document.getElementById('s-area').value;
+  const id=document.getElementById('mid').value.trim();
+  if(!area){toast('Select a production area first','var(--danger)');return;}
+  if(!id){toast('Enter an employee ID','var(--danger)');return;}
+  doPunch(id.replace(/[\r\n\t]/g,'').trim());
+  document.getElementById('mid').value='';
+}
+
+// Track selected punch type
+let selectedPunchType = null;
+
+function setPunchType(type){
+  selectedPunchType = type;
+  const btnIn  = document.getElementById('pt-in');
+  const btnOut = document.getElementById('pt-out');
+  const hint   = document.getElementById('pt-hint');
+  // Reset both
+  btnIn.style.background  = 'var(--surface2)';
+  btnIn.style.color       = 'var(--text2)';
+  btnIn.style.borderColor = 'var(--border2)';
+  btnOut.style.background  = 'var(--surface2)';
+  btnOut.style.color       = 'var(--text2)';
+  btnOut.style.borderColor = 'var(--border2)';
+  // Highlight selected
+  if(type==='IN'){
+    btnIn.style.background  = 'rgba(52,211,153,.15)';
+    btnIn.style.color       = 'var(--accent3)';
+    btnIn.style.borderColor = 'var(--accent3)';
+    hint.textContent = '✓ PUNCH IN selected — scan or enter ID';
+    hint.style.color = 'var(--accent3)';
+  } else {
+    btnOut.style.background  = 'rgba(167,139,250,.15)';
+    btnOut.style.color       = 'var(--accent2)';
+    btnOut.style.borderColor = 'var(--accent2)';
+    hint.textContent = '✓ PUNCH OUT selected — scan or enter ID';
+    hint.style.color = 'var(--accent2)';
+  }
+}
+
+function doPunch(empId){
+  const area = document.getElementById('s-area').value;
+  if(!area){toast('Select a production area first','var(--danger)');return;}
+  if(!selectedPunchType){toast('Select PUNCH IN or PUNCH OUT first','var(--danger)');return;}
+
+  // Sanitize scanned/typed ID — remove extra spaces, newlines, special chars
+  // Also try matching with and without dashes to handle helmet number formats
+  const cleanId = empId.replace(/[\r\n\t]/g,'').trim();
+  
+  // Try multiple match strategies in order
+  const emp = emps.find(e=>e.id.toLowerCase()===cleanId.toLowerCase())           // exact match
+    || emps.find(e=>e.id.toLowerCase()===cleanId.replace(/[^a-z0-9]/gi,'').toLowerCase() && e.id.replace(/[^a-z0-9]/gi,'').toLowerCase()===cleanId.replace(/[^a-z0-9]/gi,'').toLowerCase()) // strip all special chars
+    || emps.find(e=>e.id.replace(/[^0-9]/g,'')=== cleanId.replace(/[^0-9]/g,'') && cleanId.replace(/[^0-9]/g,'').length>=3); // match by number only if 3+ digits
+
+  if(!emp){toast('Unknown ID: "'+cleanId+'" — check employee list','var(--danger)');return;}
+  if(!emp.active){toast(emp.first+' '+emp.last+' is inactive','var(--warn)');return;}
+
+  // Safety check: find last punch ever (not just today) for this employee
+  const allPunches = log.filter(l=>l.empId===emp.id);
+  const lastPunch  = allPunches[0]; // log is newest-first
+
+  if(lastPunch && lastPunch.type === selectedPunchType){
+    // Duplicate punch warning — show modal with details
+    const when = fDate(lastPunch.ts)+' at '+fTime(lastPunch.ts);
+    modal(
+      '⚠ Duplicate Punch Detected',
+      '<p style="margin-bottom:.75rem">'+
+        '<b>'+emp.first+' '+emp.last+'</b> already has a '+
+        '<span style="color:'+(selectedPunchType==='IN'?'var(--accent3)':'var(--accent2)')+'">PUNCH '+selectedPunchType+'</span>'+
+        ' recorded on:<br><span style="font-family:var(--mono);font-size:.85rem">'+when+'</span></p>'+
+        '<p style="font-size:.85rem;color:var(--text2)">Are you sure you want to record another <b>PUNCH '+selectedPunchType+'</b> for this employee?</p>',
+      ()=>commitPunch(emp, area, selectedPunchType)
+    );
+    return;
+  }
+
+  commitPunch(emp, area, selectedPunchType);
+}
+
+function commitPunch(emp, area, type){
+  const entry={
+    id: Date.now()+Math.random().toString(36).substr(2,4),
+    empId: emp.id,
+    name: emp.first+' '+emp.last,
+    area, type, ts: Date.now()
+  };
+  log.unshift(entry);sv(K.L,log);
+  showResult(emp,entry);renderRecent();
+  // Show confirmation briefly then reset scanner for next employee
+  setTimeout(resetScanner, 2500);
+}
+
+function resetScanner(){
+  // Reset punch type selection
+  selectedPunchType = null;
+  const btnIn  = document.getElementById('pt-in');
+  const btnOut = document.getElementById('pt-out');
+  const hint   = document.getElementById('pt-hint');
+  if(btnIn){btnIn.style.background='var(--surface2)';btnIn.style.color='var(--text2)';btnIn.style.borderColor='var(--border2)';}
+  if(btnOut){btnOut.style.background='var(--surface2)';btnOut.style.color='var(--text2)';btnOut.style.borderColor='var(--border2)';}
+  if(hint){hint.textContent='Select IN or OUT before scanning';hint.style.color='var(--text2)';}
+  // Clear manual ID field
+  const mid = document.getElementById('mid');
+  if(mid) mid.value='';
+  // Reset scan debounce so next employee can scan immediately
+  lastId = null; lastTs = 0;
+  // Hide last punch result — back to blank state
+  const box   = document.getElementById('pr-box');
+  const empty = document.getElementById('pr-empty');
+  if(box)  box.className='pr';
+  if(empty) empty.style.display='';
+  // NOTE: area stays selected — operator likely stays at same line
+  // Camera keeps running — no need to restart
+}
+
+function showResult(emp,e){
+  const box=document.getElementById('pr-box'),empty=document.getElementById('pr-empty');
+  document.getElementById('pr-type').textContent=e.type==='IN'?'▶ PUNCH IN':'◼ PUNCH OUT';
+  document.getElementById('pr-name').textContent=emp.first+' '+emp.last;
+  document.getElementById('pr-det').textContent=e.empId+' · '+e.area+' · '+fTime(e.ts);
+  box.className='pr show '+(e.type==='IN'?'in':'out');
+  empty.style.display='none';
+  toast(e.type+' — '+emp.first+' '+emp.last+' @ '+e.area,e.type==='IN'?'var(--accent3)':'var(--accent2)');
+}
+
+function renderRecent(){
+  const wrap=document.getElementById('rp');
+  const rec=log.slice(0,8);
+  if(!rec.length){wrap.innerHTML='<div style="color:var(--text2);font-size:.8rem;text-align:center;padding:1rem">No activity yet</div>';return;}
+  wrap.innerHTML=rec.map(l=>`<div class="pi"><div><div class="pn">${l.name}</div><div class="pm">${l.empId} · ${l.area}</div></div><div style="text-align:right"><span class="badge ${l.type==='IN'?'bi':'bo'}">${l.type}</span><div class="pm">${fTime(l.ts)}</div></div></div>`).join('');
+}
+renderRecent();
+
+// ── LOG ──
+function updateStats(){
+  const today=log.filter(l=>fISO(l.ts)===fISO(Date.now()));
+  document.getElementById('st-tot').textContent=log.length;
+  document.getElementById('st-in').textContent=today.filter(l=>l.type==='IN').length;
+  document.getElementById('st-out').textContent=today.filter(l=>l.type==='OUT').length;
+  document.getElementById('st-ar').textContent=new Set(log.map(l=>l.area)).size;
+}
+function getFiltered(){
+  const q=(document.getElementById('ls').value||'').toLowerCase();
+  const ar=document.getElementById('la').value;
+  const tp=document.getElementById('lt').value;
+  const dt=document.getElementById('ld').value;
+  return log.filter(l=>{
+    if(q&&!(l.name+' '+l.empId).toLowerCase().includes(q))return false;
+    if(ar&&l.area!==ar)return false;
+    if(tp&&l.type!==tp)return false;
+    if(dt&&fISO(l.ts)!==dt)return false;
+    return true;
+  });
+}
+function renderLog(){
+  const fl=getFiltered(),tb=document.getElementById('ltb');
+  if(!fl.length){tb.innerHTML='<tr><td colspan="8"><div class="es">No records match your filters.</div></td></tr>';return;}
+  tb.innerHTML=fl.map((l,i)=>`<tr>
+    <td style="color:var(--text2);font-family:var(--mono);font-size:.72rem">${fl.length-i}</td>
+    <td><span class="chip">${l.empId}</span></td>
+    <td style="font-weight:500">${l.name}</td>
+    <td><span class="badge ba">${l.area}</span></td>
+    <td><span class="badge ${l.type==='IN'?'bi':'bo'}">${l.type}</span></td>
+    <td style="font-size:.78rem">${fDate(l.ts)}</td>
+    <td style="font-family:var(--mono);font-size:.78rem">${fTime(l.ts)}</td>
+    <td><button class="btn bd bsm" onclick="delLog('${l.id}')">✕</button></td>
+  </tr>`).join('');
+}
+function delLog(id){log=log.filter(l=>l.id!==id);sv(K.L,log);updateStats();renderLog();toast('Entry deleted');}
+function clrF(){['ls','la','lt','ld'].forEach(i=>{const el=document.getElementById(i);el.tagName==='SELECT'?el.value='':el.value='';});renderLog();}
+function clrLog(){modal('Clear All Records','Delete ALL attendance records? Cannot be undone.',()=>{log=[];sv(K.L,log);updateStats();renderLog();toast('All records cleared');});}
+
+// ── EXPORT ──
+function getExportData(){
+  return getFiltered().map((l,i,arr)=>({'#':arr.length-i,'Employee ID':l.empId,'Full Name':l.name,'Production Area':l.area,'Punch Type':l.type,'Date':fDate(l.ts),'Time':fTime(l.ts)}));
+}
+function expCSV(){
+  const data=getExportData();
+  if(!data.length){toast('No data to export','var(--warn)');return;}
+  const h=Object.keys(data[0]);
+  const rows=data.map(r=>h.map(k=>'"'+String(r[k]).replace(/"/g,'""')+'"').join(','));
+  const csv=[h.join(','),...rows].join('\r\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='ShiftScan_'+fISO(Date.now())+'.csv';
+  a.click();
+  toast('Exported '+data.length+' records as CSV','var(--accent3)');
+}
+function expXLSX(){
+  const data=getExportData();
+  if(!data.length){toast('No data to export','var(--warn)');return;}
+  if(typeof XLSX==='undefined'){toast('Excel export unavailable','var(--danger)');return;}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:12},{wch:22},{wch:20},{wch:10},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Attendance');
+  const empWs=XLSX.utils.json_to_sheet(emps.map(e=>({'ID':e.id,'First':e.first,'Last':e.last,'Dept':e.dept,'Role':e.role,'Active':e.active?'Yes':'No'})));
+  XLSX.utils.book_append_sheet(wb,empWs,'Employees');
+  XLSX.writeFile(wb,'ShiftScan_'+fISO(Date.now())+'.xlsx');
+  toast('Exported '+data.length+' records as Excel','var(--accent3)');
+}
+
+// ── KEYBOARD ──
+document.getElementById('mid').addEventListener('keydown',e=>{if(e.key==='Enter')manPunch();});
+document.getElementById('ef').addEventListener('keydown',e=>{if(e.key==='Enter')addEmp();});
+
+renderEmps();renderAreas();
+
+
+// ════════════════════════════════════════════
+//  FACE RECOGNITION
+// ════════════════════════════════════════════
+const MODEL_URL = 'https://raw.githubusercontent.com/vladmandic/face-api/master/model';
+let faceModelsLoaded = false;
+let faceStream = null;
+let faceScanning = false;
+let facePunchType = null;
+let empCamStream = null;
+let capturedPhotoData = null;
+let faceDescriptors = {}; // empId -> Float32Array descriptor
+
+function loadStoredDescriptors(){
+  try{ faceDescriptors = JSON.parse(localStorage.getItem('ss_face_desc')||'{}'); }catch{ faceDescriptors={}; }
+  // Convert arrays back to Float32Array
+  Object.keys(faceDescriptors).forEach(k=>{
+    if(Array.isArray(faceDescriptors[k])) faceDescriptors[k] = new Float32Array(faceDescriptors[k]);
+  });
+}
+function saveDescriptors(){
+  // Convert Float32Array to regular array for JSON storage
+  const toSave={};
+  Object.keys(faceDescriptors).forEach(k=>{ toSave[k]=Array.from(faceDescriptors[k]); });
+  localStorage.setItem('ss_face_desc', JSON.stringify(toSave));
+}
+loadStoredDescriptors();
+
+async function loadFaceModels(){
+  const btn = document.getElementById('btn-load-models');
+  const txt = document.getElementById('face-model-text');
+  const sub = document.getElementById('face-model-sub');
+  const dot = document.getElementById('face-model-dot');
+  btn.disabled=true; btn.textContent='Loading...';
+  txt.textContent='Downloading models (first time only)...';
+  sub.textContent='This may take 30-60 seconds depending on connection';
+  try{
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    txt.textContent='Loading landmarks...';
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    txt.textContent='Loading recognition model...';
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    faceModelsLoaded=true;
+    dot.style.background='var(--accent3)';
+    txt.textContent='✓ Models loaded — face recognition ready';
+    sub.textContent='Models cached — instant load next time';
+    btn.textContent='✓ Loaded';
+    btn.style.background='var(--accent3)';
+    btn.style.color='#000';
+    updateEnrolledList();
+    toast('Face recognition models ready','var(--accent3)');
+  }catch(e){
+    dot.style.background='var(--danger)';
+    txt.textContent='Failed to load models';
+    sub.textContent='Check internet connection and try again: '+e.message;
+    btn.disabled=false; btn.textContent='Retry';
+    console.error('Model load error:',e);
+  }
+}
+
+function setFacePunchType(type){
+  facePunchType=type;
+  const bi=document.getElementById('fp-in');
+  const bo=document.getElementById('fp-out');
+  const hint=document.getElementById('fp-hint');
+  bi.style.background='var(--surface2)';bi.style.color='var(--text2)';bi.style.borderColor='var(--border2)';
+  bo.style.background='var(--surface2)';bo.style.color='var(--text2)';bo.style.borderColor='var(--border2)';
+  if(type==='IN'){
+    bi.style.background='rgba(52,211,153,.15)';bi.style.color='var(--accent3)';bi.style.borderColor='var(--accent3)';
+    hint.textContent='✓ PUNCH IN selected';hint.style.color='var(--accent3)';
+  }else{
+    bo.style.background='rgba(167,139,250,.15)';bo.style.color='var(--accent2)';bo.style.borderColor='var(--accent2)';
+    hint.textContent='✓ PUNCH OUT selected';hint.style.color='var(--accent2)';
+  }
+}
+
+async function startFaceCam(){
+  if(!faceModelsLoaded){toast('Load face models first','var(--danger)');return;}
+  const area=document.getElementById('f-area').value;
+  if(!area){toast('Select a production area first','var(--danger)');return;}
+  if(!facePunchType){toast('Select PUNCH IN or PUNCH OUT first','var(--danger)');return;}
+  const enrolled=Object.keys(faceDescriptors).length;
+  if(enrolled===0){toast('No employees enrolled yet — add photos in Employees tab','var(--danger)');return;}
+  try{
+    faceStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:640}}});
+    const vid=document.getElementById('face-video');
+    vid.srcObject=faceStream;
+    await new Promise(res=>{vid.onloadedmetadata=()=>vid.play().then(res).catch(res);});
+    document.getElementById('face-ph').style.display='none';
+    document.getElementById('btn-face-start').style.display='none';
+    document.getElementById('btn-face-stop').style.display='';
+    const fs=document.getElementById('face-status');
+    fs.style.display='block';fs.textContent='Scanning for face...';fs.style.color='var(--text2)';
+    // Size canvas to video
+    const canvas=document.getElementById('face-canvas');
+    canvas.width=vid.videoWidth||640;canvas.height=vid.videoHeight||640;
+    faceScanning=true;
+    requestAnimationFrame(faceFrame);
+    toast('Face camera ready — look at camera','var(--accent)');
+  }catch(e){
+    toast('Camera error: '+e.message,'var(--danger)');
+  }
+}
+
+function stopFaceCam(){
+  faceScanning=false;
+  if(faceStream){faceStream.getTracks().forEach(t=>t.stop());faceStream=null;}
+  const vid=document.getElementById('face-video');
+  vid.srcObject=null;
+  document.getElementById('face-ph').style.display='';
+  document.getElementById('btn-face-start').style.display='';
+  document.getElementById('btn-face-stop').style.display='none';
+  const fs=document.getElementById('face-status');
+  if(fs)fs.style.display='none';
+}
+
+let lastFaceId=null, lastFaceTs=0;
+async function faceFrame(){
+  if(!faceScanning)return;
+  const vid=document.getElementById('face-video');
+  const canvas=document.getElementById('face-canvas');
+  const fs=document.getElementById('face-status');
+  if(vid.readyState===vid.HAVE_ENOUGH_DATA){
+    try{
+      const opts=new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.5});
+      const detection=await faceapi.detectSingleFace(vid,opts).withFaceLandmarks(true).withFaceDescriptor();
+      if(detection){
+        // Draw box on canvas
+        const dims=faceapi.matchDimensions(canvas,vid,true);
+        const resized=faceapi.resizeResults(detection,dims);
+        const ctx=canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        faceapi.draw.drawDetections(canvas,[resized]);
+        // Match against enrolled employees
+        const bestMatch=findBestMatch(detection.descriptor);
+        if(bestMatch && bestMatch.distance < 0.5){
+          const now=Date.now();
+          if(fs){fs.textContent='✓ '+bestMatch.name+' ('+Math.round((1-bestMatch.distance)*100)+'% match)';fs.style.color='var(--accent3)';}
+          if(bestMatch.empId!==lastFaceId||now-lastFaceTs>4000){
+            lastFaceId=bestMatch.empId;lastFaceTs=now;
+            const emp=emps.find(e=>e.id===bestMatch.empId);
+            if(emp) doFacePunch(emp);
+          }
+        }else{
+          if(fs){fs.textContent='Face detected — no match found';fs.style.color='var(--warn)';}
+          const ctx=canvas.getContext('2d');
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+        }
+      }else{
+        if(fs){fs.textContent='Scanning for face... look at camera';fs.style.color='var(--text2)';}
+        const ctx=canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+    }catch(e){ console.error('face frame err:',e); }
+  }
+  setTimeout(()=>requestAnimationFrame(faceFrame),200);
+}
+
+function findBestMatch(descriptor){
+  let best=null;
+  Object.keys(faceDescriptors).forEach(empId=>{
+    const stored=faceDescriptors[empId];
+    const dist=faceapi.euclideanDistance(descriptor,stored);
+    const emp=emps.find(e=>e.id===empId);
+    if(!best||dist<best.distance){
+      best={empId,distance:dist,name:emp?emp.first+' '+emp.last:'Unknown'};
+    }
+  });
+  return best;
+}
+
+function doFacePunch(emp){
+  const area=document.getElementById('f-area').value;
+  if(!area||!facePunchType)return;
+  if(!emp.active){toast(emp.first+' is inactive','var(--warn)');return;}
+  const allPunches=log.filter(l=>l.empId===emp.id);
+  const lastPunch=allPunches[0];
+  if(lastPunch&&lastPunch.type===facePunchType){
+    stopFaceCam();
+    const when=fDate(lastPunch.ts)+' at '+fTime(lastPunch.ts);
+    modal(
+      '⚠ Duplicate Punch Detected',
+      '<p style="margin-bottom:.75rem"><b>'+emp.first+' '+emp.last+'</b> already has a <span style="color:'+(facePunchType==='IN'?'var(--accent3)':'var(--accent2)')+'">PUNCH '+facePunchType+'</span> recorded on:<br><span style="font-family:var(--mono);font-size:.85rem">'+when+'</span></p><p style="font-size:.85rem;color:var(--text2)">Confirm another PUNCH '+facePunchType+'?</p>',
+      ()=>commitFacePunch(emp,area,facePunchType)
+    );
+    return;
+  }
+  commitFacePunch(emp,area,facePunchType);
+}
+
+function commitFacePunch(emp,area,type){
+  const entry={id:Date.now()+Math.random().toString(36).substr(2,4),empId:emp.id,name:emp.first+' '+emp.last,area,type,ts:Date.now()};
+  log.unshift(entry);sv(K.L,log);
+  // Show result
+  const box=document.getElementById('face-result'),empty=document.getElementById('face-result-empty');
+  box.innerHTML='<div class="prtype">'+(type==='IN'?'▶ PUNCH IN':'◼ PUNCH OUT')+'</div><div class="prname">'+emp.first+' '+emp.last+'</div><div class="prdet">'+emp.id+' · '+area+' · '+fTime(entry.ts)+'</div>';
+  box.className='pr show '+(type==='IN'?'in':'out');
+  empty.style.display='none';
+  renderRecent();
+  toast(type+' — '+emp.first+' '+emp.last+' @ '+area,type==='IN'?'var(--accent3)':'var(--accent2)');
+  // Reset after 3 seconds
+  setTimeout(()=>{
+    facePunchType=null;
+    lastFaceId=null;lastFaceTs=0;
+    const bi=document.getElementById('fp-in'),bo=document.getElementById('fp-out'),hint=document.getElementById('fp-hint');
+    if(bi){bi.style.background='var(--surface2)';bi.style.color='var(--text2)';bi.style.borderColor='var(--border2)';}
+    if(bo){bo.style.background='var(--surface2)';bo.style.color='var(--text2)';bo.style.borderColor='var(--border2)';}
+    if(hint){hint.textContent='Select IN or OUT before scanning';hint.style.color='var(--text2)';}
+    box.className='pr';empty.style.display='';
+  },3000);
+}
+
+// ── EMPLOYEE CAMERA ──
+async function openEmpCamera(){
+  try{
+    empCamStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:400},height:{ideal:400}}});
+    const vid=document.getElementById('emp-video');
+    vid.srcObject=empCamStream;
+    await new Promise(res=>{vid.onloadedmetadata=()=>vid.play().then(res).catch(res);});
+    document.getElementById('emp-cam-wrap').style.display='block';
+    document.getElementById('btn-emp-cam').style.display='none';
+    capturedPhotoData=null;
+  }catch(e){
+    toast('Camera error: '+e.message,'var(--danger)');
+  }
+}
+
+function captureEmpPhoto(){
+  const vid=document.getElementById('emp-video');
+  const canvas=document.getElementById('emp-snap-canvas');
+  canvas.width=vid.videoWidth||400;
+  canvas.height=vid.videoHeight||400;
+  canvas.getContext('2d').drawImage(vid,0,0,canvas.width,canvas.height);
+  capturedPhotoData=canvas.toDataURL('image/jpeg',0.85);
+  // Show preview
+  const preview=document.getElementById('emp-photo-preview');
+  preview.innerHTML='<img src="'+capturedPhotoData+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px">';
+  // Stop camera
+  if(empCamStream){empCamStream.getTracks().forEach(t=>t.stop());empCamStream=null;}
+  document.getElementById('emp-cam-wrap').style.display='none';
+  document.getElementById('btn-emp-retake').style.display='';
+  toast('Photo captured — add employee to save','var(--accent3)');
+}
+
+function retakeEmpPhoto(){
+  capturedPhotoData=null;
+  document.getElementById('emp-photo-preview').innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+  document.getElementById('btn-emp-cam').style.display='';
+  document.getElementById('btn-emp-retake').style.display='none';
+  openEmpCamera();
+}
+
+// Override addEmp to also process face
+const _origAddEmp = addEmp;
+window._addEmpWithFace = async function(){
+  // Call original add first
+  const before=emps.length;
+  addEmp();
+  const after=emps.length;
+  if(after>before && capturedPhotoData && faceModelsLoaded){
+    const newEmp=emps[emps.length-1]; // just added
+    toast('Processing face...','var(--accent)');
+    try{
+      const img=new Image();
+      img.src=capturedPhotoData;
+      await new Promise(res=>img.onload=res);
+      const opts=new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.4});
+      const detection=await faceapi.detectSingleFace(img,opts).withFaceLandmarks(true).withFaceDescriptor();
+      if(detection){
+        faceDescriptors[newEmp.id]=detection.descriptor;
+        saveDescriptors();
+        // Save photo too
+        const photos=JSON.parse(localStorage.getItem('ss_photos')||'{}');
+        photos[newEmp.id]=capturedPhotoData;
+        localStorage.setItem('ss_photos',JSON.stringify(photos));
+        toast(newEmp.first+' enrolled for face recognition ✓','var(--accent3)');
+        updateEnrolledList();
+      }else{
+        toast('No face detected in photo — employee added but not enrolled for face scan','var(--warn)');
+      }
+    }catch(e){
+      console.error('face enroll err:',e);
+      toast('Face processing failed: '+e.message,'var(--danger)');
+    }
+    capturedPhotoData=null;
+    document.getElementById('emp-photo-preview').innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+    document.getElementById('btn-emp-cam').style.display='';
+    document.getElementById('btn-emp-retake').style.display='none';
+  } else if(after>before && capturedPhotoData && !faceModelsLoaded){
+    // Save photo for later enrollment when models load
+    const newEmp=emps[emps.length-1];
+    const photos=JSON.parse(localStorage.getItem('ss_photos')||'{}');
+    photos[newEmp.id]=capturedPhotoData;
+    localStorage.setItem('ss_photos',JSON.stringify(photos));
+    toast(newEmp.first+' added — load face models to enable face scan','var(--warn)');
+    capturedPhotoData=null;
+  }
+};
+
+// Replace add employee button to use face version
+document.addEventListener('DOMContentLoaded',()=>{
+  // already rendered inline - patch onclick
+});
+
+function updateEnrolledList(){
+  const wrap=document.getElementById('face-enrolled-list');
+  if(!wrap)return;
+  const photos=JSON.parse(localStorage.getItem('ss_photos')||'{}');
+  const enrolled=emps.filter(e=>faceDescriptors[e.id]);
+  const photoOnly=emps.filter(e=>photos[e.id]&&!faceDescriptors[e.id]);
+  const none=emps.filter(e=>!photos[e.id]&&!faceDescriptors[e.id]);
+  let html='';
+  if(enrolled.length){
+    html+='<div style="margin-bottom:.75rem"><div style="font-size:.72rem;color:var(--accent3);font-weight:600;margin-bottom:.4rem">✓ ENROLLED ('+enrolled.length+')</div>';
+    html+=enrolled.map(e=>{
+      const p=photos[e.id];
+      return '<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid var(--border)">'+
+        (p?'<img src="'+p+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">':'<div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.7rem">👤</div>')+
+        '<div><div style="font-size:.82rem;font-weight:500">'+e.first+' '+e.last+'</div><div style="font-size:.7rem;color:var(--text2)">'+e.id+'</div></div>'+
+        '<button class="btn bd bsm" style="margin-left:auto" onclick="removeEnrollment(''+e.id+'')">Remove</button></div>';
+    }).join('');
+    html+='</div>';
+  }
+  if(photoOnly.length){
+    html+='<div style="margin-bottom:.75rem"><div style="font-size:.72rem;color:var(--warn);font-weight:600;margin-bottom:.4rem">⚠ PHOTO ONLY — load models to enroll ('+photoOnly.length+')</div>';
+    html+=photoOnly.map(e=>'<div style="font-size:.8rem;padding:.25rem 0;color:var(--text2)">'+e.first+' '+e.last+' ('+e.id+')</div>').join('');
+    html+='</div>';
+  }
+  if(none.length){
+    html+='<div><div style="font-size:.72rem;color:var(--text2);font-weight:600;margin-bottom:.4rem">NO PHOTO ('+none.length+')</div>';
+    html+=none.map(e=>'<div style="font-size:.8rem;padding:.25rem 0;color:var(--text2)">'+e.first+' '+e.last+' ('+e.id+')</div>').join('');
+    html+='</div>';
+  }
+  if(!emps.length) html='<div style="text-align:center;padding:1rem;color:var(--text2)">No employees added yet</div>';
+  wrap.innerHTML=html;
+}
+
+function removeEnrollment(empId){
+  delete faceDescriptors[empId];
+  saveDescriptors();
+  const photos=JSON.parse(localStorage.getItem('ss_photos')||'{}');
+  delete photos[empId];
+  localStorage.setItem('ss_photos',JSON.stringify(photos));
+  updateEnrolledList();
+  toast('Enrollment removed','var(--warn)');
+}
+
+// Refresh face area select and enrolled list when going to face tab
+const _origGo=go;
+function go(id){
+  _origGo(id);
+  if(id==='face'){
+    refreshFaceSel();
+    updateEnrolledList();
+    if(id!=='face')stopFaceCam();
+  }
+  if(id!=='face')stopFaceCam();
+}
+
+function refreshFaceSel(){
+  const sel=document.getElementById('f-area');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Select area —</option>';
+  areas.forEach(a=>{const o=document.createElement('option');o.value=a.name;o.textContent=a.name+(a.code?' ['+a.code+']':'');sel.appendChild(o);});
+  if(cur)sel.value=cur;
+}
+refreshFaceSel();
+
+</script>
+</body>
+</html>
