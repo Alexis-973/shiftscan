@@ -193,6 +193,10 @@ html,body{background:var(--bg);min-height:100vh;font-family:var(--body);color:va
       </div>
     </div>
 
+    <div id="enroll-status" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:var(--warn)">
+      <b id="enroll-count"></b> — click to enroll them now
+      <button onclick="enrollFromPhotos()" style="margin-left:.75rem;padding:.3rem .75rem;border-radius:6px;background:var(--warn);color:#000;font-size:.78rem;font-weight:600;border:none;cursor:pointer" id="enroll-btn">Enroll Now</button>
+    </div>
     <button class="start-btn" id="start-btn" onclick="startStation()" disabled>Start Face Scanner</button>
     
     <div class="back-link">
@@ -337,6 +341,57 @@ function updateEnrolledCount(){
 }
 updateEnrolledCount();
 
+
+async function enrollFromPhotos(){
+  const btn = document.getElementById('enroll-btn');
+  btn.textContent = 'Enrolling...';
+  btn.disabled = true;
+  const photos = JSON.parse(localStorage.getItem('ss_photos')||'{}');
+  let enrolled = 0, failed = 0;
+  for(const empId of Object.keys(photos)){
+    if(faceDescriptors[empId]) continue; // already enrolled
+    try{
+      const img = new Image();
+      img.src = photos[empId];
+      await new Promise(res=>img.onload=res);
+      const opts = new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.4});
+      const det = await faceapi.detectSingleFace(img,opts).withFaceLandmarks(true).withFaceDescriptor();
+      if(det){
+        faceDescriptors[empId] = det.descriptor;
+        enrolled++;
+      } else { failed++; }
+    }catch(e){ failed++; console.error('Enroll err:',e); }
+  }
+  // Save descriptors
+  const toSave={};
+  Object.keys(faceDescriptors).forEach(k=>{ toSave[k]=Array.from(faceDescriptors[k]); });
+  localStorage.setItem('ss_face_desc', JSON.stringify(toSave));
+  updateEnrolledCount();
+  checkStartReady();
+  document.getElementById('enroll-status').style.display='none';
+  alert(enrolled+' employee(s) enrolled successfully!'+(failed>0?'\n'+failed+' failed — retake their photos in ShiftScan.':''));
+}
+
+// Check for unenrolled photos after models load
+function checkUnenrolledPhotos(){
+  const photos = JSON.parse(localStorage.getItem('ss_photos')||'{}');
+  const unenrolled = Object.keys(photos).filter(id=>!faceDescriptors[id]);
+  const statusEl = document.getElementById('enroll-status');
+  const countEl = document.getElementById('enroll-count');
+  if(unenrolled.length > 0 && modelsLoaded){
+    const names = unenrolled.map(id=>{
+      const emp = emps.find(e=>e.id===id);
+      return emp ? emp.first+' '+emp.last : id;
+    });
+    countEl.textContent = unenrolled.length+' employee(s) have photos but are not enrolled: '+names.join(', ');
+    statusEl.style.display='block';
+    document.getElementById('enroll-btn').textContent='Enroll Now';
+    document.getElementById('enroll-btn').disabled=false;
+  } else {
+    statusEl.style.display='none';
+  }
+}
+
 async function loadModels(){
   const btn=document.getElementById('load-btn');
   const dot=document.getElementById('model-dot');
@@ -359,6 +414,7 @@ async function loadModels(){
     btn.textContent='✓';
     btn.style.background='var(--accent3)';
     checkStartReady();
+    checkUnenrolledPhotos();
   }catch(e){
     dot.className='model-dot';
     txt.textContent='Failed — check internet connection';
