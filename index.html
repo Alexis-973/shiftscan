@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="ShiftScan">
 <title>ShiftScan — Attendance System</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 <script>window.QRCodeLib=window.QRCode||{toDataURL:function(t,o,cb){QRCode.toDataURL(t,o).then(u=>cb(null,u)).catch(e=>cb(e));}};</script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>").replace(/^\d*$/,function(e){return"00,"+(e.length<3?P(0,3-e.length):"")+e})+"."+P(s,i[1].length)}switch(r){case"###,##0.00":return _e(e,"#,##0.00",t);case"###,###":;case"##,###":;case"#,###":var p=ce(U(o,0));return p!=="0"?c+p:"";case"###,###.00":return _e(e,"###,##0.00",t).replace(/^0\./,".");case"#,###.00":return _e(e,"#,##0.00",t).replace(/^0\./,".");default:;}throw new Error("unsupported format |"+r+"|")}function Ae(e,r,t){var a=r.length-1;while(r.charCodeAt(a-1)===44)--a;return De(e,r.substr(0,a),t/Math.pow(10,3*(r.length-a)))}function Te(e,r,t){var a=r.replace(fe,""),n=r.length-a.length;return De(e,a,t*Math.pow(10,2*n))+br("%",n)}function Ee(e,r){var t;var a=e.indexOf("E")-e.indexOf(".")-1;if(e.match(/^#+0.0E\+0$/)){if(r==0)return"0.0E+0";else if(r<0)return"-"+Ee(e,-r);var n=e.indexOf(".");if(n===-1)n=e.indexOf("E");var i=Math.floor(Math.log(r)*Math.LOG10E)%n;if(i<0)i+=n;t=(r/Math.pow(10,i)).toPrecision(a+1+(n+i)%n);if(!t.match(/[Ee]/)){var s=Math.floor(Math.log(r)*Math.LOG10E);if(t.indexOf(".")===-1)t=t.charAt(0)+"."+t.substr(1)+"E+"+(s-t.length+i);else t+="E+"+(s-i);t=t.replace(/\+-/,"-")}t=t.replace(/^([+-]?)(\d*)\.(\d*)[Ee]/,function(e,r,t,a){return r+t+a.substr(0,(n+i)%n)+"."+a.substr(i)+"E"})}else t=r.toExponential(a);if(e.match(/E\+00$/)&&t.match(/e[+-]\d$/))t=t.substr(0,t.length-1)+"0"+t.charAt(t.length-1);if(e.match(/E\-/)&&t.match(/e\+/))t=t.replace(/e\+/,"e");return t.replace("e","E")}function Fe(e,r,t){if(e.charCodeAt(0)===40&&!r.match(be)){var a=r.replace(/\( */,"").replace(/ \)/,"").replace(/\)/,"");if(t>=0)return Fe("n",a,t);return"("+Fe("n",a,-t)+")"}if(r.charCodeAt(r.length-1)===44)return Ae(e,r,t);if(r.indexOf("%")!==-1)return Te(e,r,t);if(r.indexOf("E")!==-1)return Ee(r,t);if(r.charCodeAt(0)===36)return"$"+Fe(e,r.substr(r.charAt(1)==" "?2:1),t);var n;var i,s,l,o=Math.abs(t),c=t<0?"-":"";if(r.match(/^00+$/))return c+P(o,r.length);if(r.match(/^[#?]+$/)){n=""+t;if(t===0)n="";return n.length>r.length?n:ye(r.substr(0,r.length-n.length))+n}if(i=r.match(de))return ve(i,o,c);if(r.match(/^#+0+$/))return c+P(o,r.length-r.indexOf("0"));if(i=r.match(ge)){n=(""+t).replace(/^([^\.]+)$/,"$1."+ye(i[1])).replace(/\.$/,"."+ye(i[1]));n=n.replace(/\.(\d*)$/,function(e,r){return"."+r+br("0",ye(i[1]).length-r.length)});return r.indexOf("0.")!==-1?n:n.replace(/^0\./,".")}r=r.replace(/^#+([0.])/,"$1");if(i=r.match(/^(0*)\.(#*)$/)){return c+(""+o).replace(/\.(\d*[1-9])0*$/,".$1").replace(/^(-?\d*)$/,"$1.").replace(/^0\./,i[1].length?"0.":".")}if(i=r.match(/^#{1,3},##0(\.?)$/))return c+ce(""+o);if(i=r.match(/^#,##0\.([#0]*0)$/)){return t<0?"-"+Fe(e,r,-t):ce(""+t)+"."+br("0",i[1].length)}if(i=r.match(/^#,#*,#0/))return Fe(e,r.replace(/^#,#*,/,""),t);if(i=r.match(/^([0#]+)(\\?-([0#]+))+$/)){n=N(Fe(e,r.replace(/[\\-]/g,""),t));s=0;return N(N(r.replace(/\\/g,"")).replace(/[0#]/g,function(e){return s<n.length?n.charAt(s++):e==="0"?"0":""}))}if(r.match(we)){n=Fe(e,"##########",t);return"("+n.substr(0,3)+") "+n.substr(3,3)+"-"+n.substr(6)}var f="";if(i=r.match(/^([#0?]+)( ?)\/( ?)([#0?]+)/)){s=Math.min(i[4].length,7);l=J(o,Math.pow(10,s)-1,false);n=""+c;f=De("n",i[1],l[1]);if(f.charAt(f.length-1)==" ")f=f.substr(0,f.length-1)+"0";n+=f+i[2]+"/"+i[3];f=R(l[2],s);if(f.length<i[4].length)f=ye(i[4].substr(i[4].length-f.length))+f;n+=f;return n}if(i=r.match(/^# ([#0?]+)( ?)\/( ?)([#0?]+)/)){s=Math.min(Math.max(i[1].length,i[4].length),7);l=J(o,Math.pow(10,s)-1,true);return c+(l[0]||(l[1]?"":"0"))+" "+(l[1]?I(l[1],s)+i[2]+"/"+i[3]+R(l[2],s):br(" ",2*s+1+i[2].length+i[3].length))}if(i=r.match(/^[#0?]+$/)){n=""+t;if(r.length<=n.length)return n;return ye(r.substr(0,r.length-n.length))+n}if(i=r.match(/^([#0]+)\.([#0]+)$/)){n=""+t.toFixed(Math.min(i[2].length,10)).replace(/([^0])0+$/,"$1");s=n.indexOf(".");var u=r.indexOf(".")-s,h=r.length-n.length-u;return ye(r.substr(0,u)+n+r.substr(r.length-h))}if(i=r.match(/^00,000\.([#0]*0)$/)){return t<0?"-"+Fe(e,r,-t):ce(""+t).replace(/^\d,\d{3}$/,"0<script src="xlsx.js"></script>").replace(/^\d*$/,function(e){return"00,"+(e.length<3?P(0,3-e.length):"")+e})+"."+P(0,i[1].length)}switch(r){case"###,###":;case"##,###":;case"#,###":var p=ce(""+o);return p!=="0"?c+p:"";default:if(r.match(/\.[0#?]*$/))return Fe(e,r.slice(0,r.lastIndexOf(".")),t)+ye(r.slice(r.lastIndexOf(".")));}throw new Error("unsupported format |"+r+"|")}function De(e,r,t){return(t|0)===t?Fe(e,r,t):_e(e,r,t)}function Oe(e){var r=[];var t=false;for(var a=0,n=0;a<e.length;++a)switch(e.charCodeAt(a)){case 34:t=!t;break;case 95:;case 42:;case 92:++a;break;case 59:r[r.length]=e.substr(n,a-n);n=a+1;}r[r.length]=e.substr(n);if(t===true)throw new Error("Format |"+e+"| unterminated string ");return r}var Me=/\[[HhMmSs\u0E0A\u0E19\u0E17]*\]/;function Ne(e){var r=0,t="",a="";while(r<e.length){switch(t=e.charAt(r)){case"G":if(W(e,r))r+=6;r++;break;case'"':for(;e.charCodeAt(++r)!==34&&r<e.length;){}++r;break;case"\\":r+=2;break;case"_":r+=2;break;case"@":++r;break;case"B":;case"b":if(e.charAt(r+1)==="1"||e.charAt(r+1)==="2")return true;case"M":;case"D":;case"Y":;case"H":;case"S":;case"E":;case"m":;case"d":;case"y":;case"h":;case"s":;case"e":;case"g":return true;case"A":;case"a":;case"上":if(e.substr(r,3).toUpperCase()==="A/P")return true;if(e.substr(r,5).toUpperCase()==="AM/PM")return true;if(e.substr(r,5).toUpperCase()==="上午/下午")return true;++r;break;case"[":a=t;while(e.charAt(r++)!=="]"&&r<e.length)a+=e.charAt(r);if(a.match(Me))return true;break;case".":;case"0":;case"#":while(r<e.length&&("0#?.,E+-%".indexOf(t=e.charAt(++r))>-1||t=="\\"&&e.charAt(r+1)=="-"&&"0#".indexOf(e.charAt(r+2))>-1)){}break;case"?":while(e.charAt(++r)===t){}break;case"*":++r;if(e.charAt(r)==" "||e.charAt(r)=="*")++r;break;case"(":;case")":++r;break;case"1":;case"2":;case"3":;case"4":;case"5":;case"6":;case"7":;case"8":;case"9":while(r<e.length&&"0123456789".indexOf(e.charAt(++r))>-1){}break;case" ":++r;break;default:++r;break;}}return false}function Pe(e,r,t,a){var n=[],i="",s=0,l="",o="t",c,f,u;var h="H";while(s<e.length){switch(l=e.charAt(s)){case"G":if(!W(e,s))throw new Error("unrecognized character "+l+" in "+e);n[n.length]={t:"G",v:"General"};s+=7;break;case'"':for(i="";(u=e.charCodeAt(++s))!==34&&s<e.length;)i+=String.fromCharCode(u);n[n.length]={t:"t",v:i};++s;break;case"\\":var p=e.charAt(++s),d=p==="("||p===")"?p:"t";n[n.length]={t:d,v:p};++s;break;case"_":n[n.length]={t:"t",v:" "};s+=2;break;case"@":n[n.length]={t:"T",v:r};++s;break;case"B":;case"b":if(e.charAt(s+1)==="1"||e.charAt(s+1)==="2"){if(c==null){c=K(r,t,e.charAt(s+1)==="2");if(c==null)return""}n[n.length]={t:"X",v:e.substr(s,2)};o=l;s+=2;break};case"M":;case"D":;case"Y":;case"H":;case"S":;case"E":l=l.toLowerCase();case"m":;case"d":;case"y":;case"h":;case"s":;case"e":;case"g":if(r<0)return"";if(c==null){c=K(r,t);if(c==null)return""}i=l;while(++s<e.length&&e.charAt(s).toLowerCase()===l)i+=l;if(l==="m"&&o.toLowerCase()==="h")l="M";if(l==="h")l=h;n[n.length]={t:l,v:i};o=l;break;case"A":;case"a":;case"上":var m={t:l,v:l};if(c==null)c=K(r,t);if(e.substr(s,3).toUpperCase()==="A/P"){if(c!=null)m.v=c.H>=12?"P":"A";m.t="T";h="h";s+=3}else if(e.substr(s,5).toUpperCase()==="AM/PM"){if(c!=null)m.v=c.H>=12?"PM":"AM";m.t="T";s+=5;h="h"}else if(e.substr(s,5).toUpperCase()==="上午/下午"){if(c!=null)m.v=c.H>=12?"下午":"上午";m.t="T";s+=5;h="h"}else{m.t="t";++s}if(c==null&&m.t==="T")return"";n[n.length]=m;o=l;break;case"[":i=l;while(e.charAt(s++)!=="]"&&s<e.length)i+=e.charAt(s);if(i.slice(-1)!=="]")throw'unterminated "[" block: |'+i+"|";if(i.match(Me)){if(c==null){c=K(r,t);if(c==null)return""}n[n.length]={t:"Z",v:i.toLowerCase()};o=i.charAt(1)}else if(i.indexOf("$")>-1){i=(i.match(/\$([^-\[\]]*)/)||[])[1]||"$";if(!Ne(e))n[n.length]={t:"t",v:i}}break;case".":if(c!=null){i=l;while(++s<e.length&&(l=e.charAt(s))==="0")i+=l;n[n.length]={t:"s",v:i};break};case"0":;case"#":i=l;while(++s<e.length&&"0#?.,E+-%".indexOf(l=e.charAt(s))>-1)i+=l;n[n.length]={t:"n",v:i};break;case"?":i=l;while(e.charAt(++s)===l)i+=l;n[n.length]={t:l,v:i};o=l;break;case"*":++s;if(e.charAt(s)==" "||e.charAt(s)=="*")++s;break;case"(":;case")":n[n.length]={t:a===1?"t":l,v:l};++s;break;case"1":;case"2":;case"3":;case"4":;case"5":;case"6":;case"7":;case"8":;case"9":i=l;while(s<e.length&&"0123456789".indexOf(e.charAt(++s))>-1)i+=e.charAt(s);n[n.length]={t:"D",v:i};break;case" ":n[n.length]={t:l,v:l};++s;break;case"$":n[n.length]={t:"t",v:"$"};++s;break;default:if(",$-+/():!^&'~{}<>=€acfijklopqrtuvwxzP".indexOf(l)===-1)throw new Error("unrecognized character "+l+" in "+e);n[n.length]={t:"t",v:l};++s;break;}}var v=0,g=0,b;for(s=n.length-1,o="t";s>=0;--s){switch(n[s].t){case"h":;case"H":n[s].t=h;o="h";if(v<1)v=1;break;case"s":if(b=n[s].v.match(/\.0+$/))g=Math.max(g,b[0].length-1);if(v<3)v=3;case"d":;case"y":;case"M":;case"e":o=n[s].t;break;case"m":if(o==="s"){n[s].t="M";if(v<2)v=2}break;case"X":break;case"Z":if(v<1&&n[s].v.match(/[Hh]/))v=1;if(v<2&&n[s].v.match(/[Mm]/))v=2;if(v<3&&n[s].v.match(/[Ss]/))v=3;}}switch(v){case 0:break;case 1:if(c.u>=.5){c.u=0;++c.S}if(c.S>=60){c.S=0;++c.M}if(c.M>=60){c.M=0;++c.H}break;case 2:if(c.u>=.5){c.u=0;++c.S}if(c.S>=60){c.S=0;++c.M}break;}var w="",y;for(s=0;s<n.length;++s){switch(n[s].t){case"t":;case"T":;case" ":;case"D":break;case"X":n[s].v="";n[s].t=";";break;case"d":;case"m":;case"y":;case"h":;case"H":;case"M":;case"s":;case"e":;case"b":;case"Z":n[s].v=oe(n[s].t.charCodeAt(0),n[s].v,c,g);n[s].t="t";break;case"n":;case"?":y=s+1;while(n[y]!=null&&((l=n[y].t)==="?"||l==="D"||(l===" "||l==="t")&&n[y+1]!=null&&(n[y+1].t==="?"||n[y+1].t==="t"&&n[y+1].v==="/")||n[s].t==="("&&(l===" "||l==="n"||l===")")||l==="t"&&(n[y].v==="/"||n[y].v===" "&&n[y+1]!=null&&n[y+1].t=="?"))){n[s].v+=n[y].v;n[y]={v:"",t:";"};++y}w+=n[s].v;s=y-1;break;case"G":n[s].t="t";n[s].v=se(r,t);break;}}var k="",x,S;if(w.length>0){if(w.charCodeAt(0)==40){x=r<0&&w.charCodeAt(0)===45?-r:r;S=De("n",w,x)}else{x=r<0&&a>1?-r:r;S=De("n",w,x);if(x<0&&n[0]&&n[0].t=="t"){S=S.substr(1);n[0].v="-"+n[0].v}}y=S.length-1;var C=n.length;for(s=0;s<n.length;++s)if(n[s]!=null&&n[s].t!="t"&&n[s].v.indexOf(".")>-1){C=s;break}var _=n.length;if(C===n.length&&S.indexOf("E")===-1){for(s=n.length-1;s>=0;--s){if(n[s]==null||"n?".indexOf(n[s].t)===-1)continue;if(y>=n[s].v.length-1){y-=n[s].v.length;n[s].v=S.substr(y+1,n[s].v.length)}else if(y<0)n[s].v="";else{n[s].v=S.substr(0,y+1);y=-1}n[s].t="t";_=s}if(y>=0&&_<n.length)n[_].v=S.substr(0,y+1)+n[_].v}else if(C!==n.length&&S.indexOf("E")===-1){y=S.indexOf(".")-1;for(s=C;s>=0;--s){if(n[s]==null||"n?".indexOf(n[s].t)===-1)continue;f=n[s].v.indexOf(".")>-1&&s===C?n[s].v.indexOf(".")-1:n[s].v.length-1;k=n[s].v.substr(f+1);for(;f>=0;--f){if(y>=0&&(n[s].v.charAt(f)==="0"||n[s].v.charAt(f)==="#"))k=S.charAt(y--)+k}n[s].v=k;n[s].t="t";_=s}if(y>=0&&_<n.length)n[_].v=S.substr(0,y+1)+n[_].v;y=S.indexOf(".")+1;for(s=C;s<n.length;++s){if(n[s]==null||"n?(".indexOf(n[s].t)===-1&&s!==C)continue;f=n[s].v.indexOf(".")>-1&&s===C?n[s].v.indexOf(".")+1:0;k=n[s].v.substr(0,f);for(;f<n[s].v.length;++f){if(y<S.length)k+=S.charAt(y++)}n[s].v=k;n[s].t="t";_=s}}}for(s=0;s<n.length;++s)if(n[s]!=null&&"n?".indexOf(n[s].t)>-1){x=a>1&&r<0&&s>0&&n[s-1].v==="-"?-r:r;n[s].v=De(n[s].t,n[s].v,x);n[s].t="t"}var A="";for(s=0;s!==n.length;++s)if(n[s]!=null)A+=n[s].v;return A}var Ie=/\[(=|>[=]?|<[>=]?)(-?\d+(?:\.\d*)?)\]/;function Re(e,r){if(r==null)return false;var t=parseFloat(r[2]);switch(r[1]){case"=":if(e==t)return true;break;case">":if(e>t)return true;break;case"<":if(e<t)return true;break;case"<>":if(e!=t)return true;break;case">=":if(e>=t)return true;break;case"<=":if(e<=t)return true;break;}return false}function Le(e,r){var t=Oe(e);var a=t.length,n=t[a-1].indexOf("@");if(a<4&&n>-1)--a;if(t.length>4)throw new Error("cannot find right format for |"+t.join("|")+"|");if(typeof r!=="number")return[4,t.length===4||n>-1?t[t.length-1]:"@"];switch(t.length){case 1:t=n>-1?["General","General","General",t[0]]:[t[0],t[0],t[0],"@"];break;case 2:t=n>-1?[t[0],t[0],t[0],t[1]]:[t[0],t[1],t[0],"@"];break;case 3:t=n>-1?[t[0],t[1],t[0],t[2]]:[t[0],t[1],t[2],"@"];break;case 4:break;}var i=r>0?t[0]:r<0?t[1]:t[2];if(t[0].indexOf("[")===-1&&t[1].indexOf("[")===-1)return[a,i];if(t[0].match(/\[[=<>]/)!=null||t[1].match(/\[[=<>]/)!=null){var s=t[0].match(Ie);var l=t[1].match(Ie);return Re(r,s)?[a,t[0]]:Re(r,l)?[a,t[1]]:[a,t[s!=null&&l!=null?2:1]]}return[a,i]}function Be(e,r,t){if(t==null)t={};var a="";switch(typeof e){case"string":if(e=="m/d/yy"&&t.dateNF)a=t.dateNF;else a=e;break;case"number":if(e==14&&t.dateNF)a=t.dateNF;else a=(t.table!=null?t.table:X)[e];if(a==null)a=t.table&&t.table[G[e]]||X[G[e]];if(a==null)a=Y[e]||"General";break;}if(W(a,0))return se(r,t);if(r instanceof Date)r=ee(r,t.date1904);var n=Le(a,r);if(W(n[1]))return se(r,t);if(r===true)r="TRUE";else if(r===false)r="FALSE";else if(r===""||r==null)return"";return Pe(n[1],r,t,n[0])}function $e(e,r){if(typeof r!="number"){r=+r||-1;for(var t=0;t<392;++t){if(X[t]==undefined){if(r<0)r=t;continue}if(X[t]==e){r=t;break}}if(r<0)r=391}X[r]=e;return r}function ze(e){for(var r=0;r!=392;++r)if(e[r]!==undefined)$e(e[r],r)}function Ue(){X=V()}var We={format:Be,load:$e,_table:X,load_table:ze,parse_date_code:K,is_date:Ne,get_table:function _c(){return We._table=X}};var je={5:'"$"#,##0_);\\("$"#,##0\\)',6:'"$"#,##0_);[Red]\\("$"#,##0\\)',7:'"$"#,##0.00_);\\("$"#,##0.00\\)',8:'"$"#,##0.00_);[Red]\\("$"#,##0.00\\)',23:"General",24:"General",25:"General",26:"General",27:"m/d/yy",28:"m/d/yy",29:"m/d/yy",30:"m/d/yy",31:"m/d/yy",32:"h:mm:ss",33:"h:mm:ss",34:"h:mm:ss",35:"h:mm:ss",36:"m/d/yy",41:'_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)',42:'_("$"* #,##0_);_("$"* (#,##0);_("$"* "-"_);_(@_)',43:'_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)',44:'_("$"* #,##0.00_);_("$"* (#,##0.00);_("$"* "-"??_);_(@_)',50:"m/d/yy",51:"m/d/yy",52:"m/d/yy",53:"m/d/yy",54:"m/d/yy",55:"m/d/yy",56:"m/d/yy",57:"m/d/yy",58:"m/d/yy",59:"0",60:"0.00",61:"#,##0",62:"#,##0.00",63:'"$"#,##0_);\\("$"#,##0\\)',64:'"$"#,##0_);[Red]\\("$"#,##0\\)',65:'"$"#,##0.00_);\\("$"#,##0.00\\)',66:'"$"#,##0.00_);[Red]\\("$"#,##0.00\\)',67:"0%",68:"0.00%",69:"# ?/?",70:"# ??/??",71:"m/d/yy",72:"m/d/yy",73:"d-mmm-yy",74:"d-mmm",75:"mmm-yy",76:"h:mm",77:"h:mm:ss",78:"m/d/yy h:mm",79:"mm:ss",80:"[h]:mm:ss",81:"mmss.0"};var He=/[dD]+|[mM]+|[yYeE]+|[Hh]+|[Ss]+/g;function Ve(e){var r=typeof e=="number"?X[e]:e;r=r.replace(He,"(\\d+)");return new RegExp("^"+r+"$")}function Xe(e,r,t){var a=-1,n=-1,i=-1,s=-1,l=-1,o=-1;(r.match(He)||[]).forEach(function(e,r){var c=parseInt(t[r+1],10);switch(e.toLowerCase().charAt(0)){case"y":a=c;break;case"d":i=c;break;case"h":s=c;break;case"s":o=c;break;case"m":if(s>=0)l=c;else n=c;break;}});if(o>=0&&l==-1&&n>=0){l=n;n=-1}var c=(""+(a>=0?a:(new Date).getFullYear())).slice(-4)+"-"+("00"+(n>=1?n:1)).slice(-2)+"-"+("00"+(i>=1?i:1)).slice(-2);if(c.length==7)c="0"+c;if(c.length==8)c="20"+c;var f=("00"+(s>=0?s:0)).slice(-2)+":"+("00"+(l>=0?l:0)).slice(-2)+":"+("00"+(o>=0?o:0)).slice(-2);if(s==-1&&l==-1&&o==-1)return c;if(a==-1&&n==-1&&i==-1)return f;return c+"T"+f}var Ge=function(){var e={};e.version="1.2.0";function r(){var e=0,r=new Array(256);for(var t=0;t!=256;++t){e=t;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;e=e&1?-306674912^e>>>1:e>>>1;r[t]=e}return typeof Int32Array!=="undefined"?new Int32Array(r):r}var t=r();function a(e){var r=0,t=0,a=0,n=typeof Int32Array!=="undefined"?new Int32Array(4096):new Array(4096);for(a=0;a!=256;++a)n[a]=e[a];for(a=0;a!=256;++a){t=e[a];for(r=256+a;r<4096;r+=256)t=n[r]=t>>>8^e[t&255]}var i=[];for(a=1;a!=16;++a)i[a-1]=typeof Int32Array!=="undefined"?n.subarray(a*256,a*256+256):n.slice(a*256,a*256+256);return i}var n=a(t);var i=n[0],s=n[1],l=n[2],o=n[3],c=n[4];var f=n[5],u=n[6],h=n[7],p=n[8],d=n[9];var m=n[10],v=n[11],g=n[12],b=n[13],w=n[14];function y(e,r){var a=r^-1;for(var n=0,i=e.length;n<i;)a=a>>>8^t[(a^e.charCodeAt(n++))&255];return~a}function k(e,r){var a=r^-1,n=e.length-15,y=0;for(;y<n;)a=w[e[y++]^a&255]^b[e[y++]^a>>8&255]^g[e[y++]^a>>16&255]^v[e[y++]^a>>>24]^m[e[y++]]^d[e[y++]]^p[e[y++]]^h[e[y++]]^u[e[y++]]^f[e[y++]]^c[e[y++]]^o[e[y++]]^l[e[y++]]^s[e[y++]]^i[e[y++]]^t[e[y++]];n+=15;while(y<n)a=a>>>8^t[(a^e[y++])&255];return~a}function x(e,r){var a=r^-1;for(var n=0,i=e.length,s=0,l=0;n<i;){
@@ -134,10 +134,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M17 17v4M14 21h3"/></svg>
     Scanner
   </button>
-<button class="nb" onclick="window.location.href='face.html'" id="n-face">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    Face Scan
-  </button>
+
   <button class="nb" onclick="go('emp')" id="n-emp">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 11l2 2 4-4"/></svg>
     Employees
@@ -233,32 +230,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="fg"><label>Position / Role</label><input id="er" placeholder="e.g. Line Operator"></div>
       <div class="fg"><label>Custom ID (or leave blank to auto)</label><input id="ei" placeholder="Auto-generated or use simple number e.g. 0001"></div>
     </div>
-    <div style="margin-bottom:.75rem">
-      <label style="font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.03em;display:block;margin-bottom:.5rem">Employee Photo (for Face Recognition)</label>
-      <div style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
-        <div id="emp-photo-preview" style="width:80px;height:80px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <div style="flex:1">
-          <div class="bg" style="margin-bottom:.5rem">
-            <button class="btn bs bsm" onclick="openEmpCamera()" id="btn-emp-cam">📷 Take Photo</button>
-            <button class="btn bs bsm" onclick="retakeEmpPhoto()" id="btn-emp-retake" style="display:none">↺ Retake</button>
-          </div>
-          <div id="emp-cam-wrap" style="display:none">
-            <div style="position:relative;width:200px;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#000;margin-bottom:.5rem">
-              <video id="emp-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-              <div style="position:absolute;inset:0;border:2px solid var(--accent);border-radius:8px;pointer-events:none;display:flex;align-items:center;justify-content:center">
-                <div style="width:60%;height:80%;border:1px dashed rgba(110,231,247,.5);border-radius:50%"></div>
-              </div>
-            </div>
-            <canvas id="emp-snap-canvas" style="display:none"></canvas>
-            <button class="btn bp bsm" onclick="captureEmpPhoto()">📸 Capture</button>
-          </div>
-          <div style="font-size:.7rem;color:var(--text2);margin-top:.25rem">Take photo with PPE on (helmet + hairnet) for best accuracy</div>
-        </div>
-      </div>
-    </div>
-    <div class="bg"><button class="btn bp" onclick="window._addEmpWithFace?window._addEmpWithFace():addEmp()">+ Add Employee</button><button class="btn bs" onclick="clrEmp()">Clear</button></div>
+    <div class="bg"><button class="btn bp" onclick="addEmp()">+ Add Employee</button><button class="btn bs" onclick="clrEmp()">Clear</button></div>
   </div>
   <div class="card" style="padding:0">
     <div style="padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
@@ -478,6 +450,34 @@ let stream=null,scanning=false,lastId=null,lastTs=0;
 const scanC=document.createElement('canvas');
 const scanX=scanC.getContext('2d',{willReadFrequently:true});
 
+// ZXing multi-format reader (QR + all major barcodes)
+let zxingReader=null;
+function getZXingReader(){
+  if(zxingReader)return zxingReader;
+  try{
+    const hints=new Map();
+    const formats=[
+      ZXing.BarcodeFormat.QR_CODE,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39,
+      ZXing.BarcodeFormat.CODE_93,
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E,
+      ZXing.BarcodeFormat.ITF,
+      ZXing.BarcodeFormat.DATA_MATRIX,
+      ZXing.BarcodeFormat.AZTEC,
+      ZXing.BarcodeFormat.PDF_417
+    ];
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+    zxingReader=new ZXing.MultiFormatReader();
+    zxingReader.setHints(hints);
+  }catch(e){zxingReader=null;}
+  return zxingReader;
+}
+
 async function startCam(){
   const area=document.getElementById('s-area').value;
   if(!area){toast('Select a production area first','var(--danger)');return;}
@@ -520,8 +520,16 @@ function scanFrame(){
     scanX.drawImage(vid,0,0,scanC.width,scanC.height);
     const imgData=scanX.getImageData(0,0,scanC.width,scanC.height);
     const ss=document.getElementById('ss');
-    if(typeof jsQR!=='undefined'){
-      const res=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'attemptBoth'});
+    const reader=getZXingReader();
+    if(reader){
+      let res=null;
+      try{
+        const lum=new ZXing.HTMLCanvasElementLuminanceSource(scanC);
+        const bmp=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum));
+        const decoded=reader.decode(bmp);
+        if(decoded)res={data:decoded.getText()};
+      }catch(e){/* no barcode found this frame */}
+      if(res){
       if(res&&res.data){
         const now=Date.now();
         if(ss){ss.textContent='✓ QR found: '+res.data.trim();ss.style.color='var(--accent3)';}
@@ -533,7 +541,7 @@ function scanFrame(){
         if(ss){ss.textContent='Scanning… hold QR code steady in frame';ss.style.color='var(--text2)';}
       }
     } else {
-      if(ss){ss.textContent='⚠ jsQR not loaded';ss.style.color='var(--danger)';}
+      if(ss){ss.textContent='⚠ ZXing not loaded';ss.style.color='var(--danger)';}
     }
   }
   requestAnimationFrame(scanFrame);
@@ -746,74 +754,6 @@ document.getElementById('mid').addEventListener('keydown',e=>{if(e.key==='Enter'
 document.getElementById('ef').addEventListener('keydown',e=>{if(e.key==='Enter')addEmp();});
 
 renderEmps();renderAreas();
-
-
-
-// ── FACE PHOTO STORAGE (shared with face.html) ──
-let faceDescriptors = {};
-function loadStoredDescriptors(){
-  try{
-    const raw = JSON.parse(localStorage.getItem('ss_face_desc')||'{}');
-    Object.keys(raw).forEach(k=>{ faceDescriptors[k]=new Float32Array(raw[k]); });
-  }catch{ faceDescriptors={}; }
-}
-loadStoredDescriptors();
-
-// ── EMPLOYEE CAMERA (for photo capture) ──
-let empCamStream = null;
-let capturedPhotoData = null;
-
-async function openEmpCamera(){
-  try{
-    empCamStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:400},height:{ideal:400}}});
-    const vid=document.getElementById('emp-video');
-    vid.srcObject=empCamStream;
-    await new Promise(res=>{vid.onloadedmetadata=()=>vid.play().then(res).catch(res);});
-    document.getElementById('emp-cam-wrap').style.display='block';
-    document.getElementById('btn-emp-cam').style.display='none';
-    capturedPhotoData=null;
-  }catch(e){ toast('Camera error: '+e.message,'var(--danger)'); }
-}
-
-function captureEmpPhoto(){
-  const vid=document.getElementById('emp-video');
-  const canvas=document.getElementById('emp-snap-canvas');
-  canvas.width=vid.videoWidth||400;
-  canvas.height=vid.videoHeight||400;
-  canvas.getContext('2d').drawImage(vid,0,0,canvas.width,canvas.height);
-  capturedPhotoData=canvas.toDataURL('image/jpeg',0.85);
-  const preview=document.getElementById('emp-photo-preview');
-  preview.innerHTML='<img src="'+capturedPhotoData+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px">';
-  if(empCamStream){empCamStream.getTracks().forEach(t=>t.stop());empCamStream=null;}
-  document.getElementById('emp-cam-wrap').style.display='none';
-  document.getElementById('btn-emp-retake').style.display='';
-  toast('Photo saved — click Add Employee','var(--accent3)');
-}
-
-function retakeEmpPhoto(){
-  capturedPhotoData=null;
-  document.getElementById('emp-photo-preview').innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
-  document.getElementById('btn-emp-cam').style.display='';
-  document.getElementById('btn-emp-retake').style.display='none';
-  openEmpCamera();
-}
-
-window._addEmpWithFace = function(){
-  const before=emps.length;
-  addEmp();
-  const after=emps.length;
-  if(after>before && capturedPhotoData){
-    const newEmp=emps[emps.length-1];
-    const photos=JSON.parse(localStorage.getItem('ss_photos')||'{}');
-    photos[newEmp.id]=capturedPhotoData;
-    localStorage.setItem('ss_photos',JSON.stringify(photos));
-    toast(newEmp.first+' photo saved for Face Scan','var(--accent3)');
-    capturedPhotoData=null;
-    document.getElementById('emp-photo-preview').innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
-    document.getElementById('btn-emp-cam').style.display='';
-    document.getElementById('btn-emp-retake').style.display='none';
-  }
-};
 
 function goHook(id){
   if(id!=='scan') stopCam();
